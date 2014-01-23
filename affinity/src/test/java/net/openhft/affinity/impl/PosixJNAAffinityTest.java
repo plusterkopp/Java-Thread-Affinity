@@ -16,13 +16,10 @@
 
 package net.openhft.affinity.impl;
 
-import net.openhft.affinity.AffinitySupport;
-import net.openhft.affinity.IAffinity;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import static org.junit.Assert.*;
+import net.openhft.affinity.*;
 
-import static org.junit.Assert.assertTrue;
+import org.junit.*;
 
 /**
  * @author peter.lawrey
@@ -30,6 +27,8 @@ import static org.junit.Assert.assertTrue;
 public class PosixJNAAffinityTest extends AbstractAffinityImplTest {
     @BeforeClass
     public static void checkJniLibraryPresent() {
+    	String osName = System.getProperty("os.name");
+    	Assume.assumeTrue(osName.contains("x"));
         Assume.assumeTrue(PosixJNAAffinity.LOADED);
     }
 
