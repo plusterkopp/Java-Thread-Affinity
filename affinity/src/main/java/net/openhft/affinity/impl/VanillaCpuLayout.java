@@ -16,14 +16,13 @@
 
 package net.openhft.affinity.impl;
 
-import net.openhft.affinity.CpuLayout;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import net.openhft.affinity.*;
+import org.jetbrains.annotations.*;
 
 import java.io.*;
 import java.util.*;
 
-import static java.lang.Integer.parseInt;
+import static java.lang.Integer.*;
 
 /**
  * @author peter.lawrey

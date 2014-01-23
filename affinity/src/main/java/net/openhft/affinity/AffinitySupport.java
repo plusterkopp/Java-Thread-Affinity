@@ -50,6 +50,10 @@ public enum AffinitySupport {
         }
     }
 
+	public static CpuLayout getDefaultLayout() {
+		return AFFINITY_IMPL.getDefaultLayout();
+	}
+
     public static long getAffinity() {
         return AFFINITY_IMPL.getAffinity();
     }

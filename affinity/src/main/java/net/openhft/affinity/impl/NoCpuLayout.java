@@ -16,7 +16,7 @@
 
 package net.openhft.affinity.impl;
 
-import net.openhft.affinity.CpuLayout;
+import net.openhft.affinity.*;
 
 /**
  * This assumes there is one socket with every cpu on a different core.

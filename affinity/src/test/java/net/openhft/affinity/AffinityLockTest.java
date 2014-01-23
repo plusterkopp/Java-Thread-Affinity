@@ -113,15 +113,19 @@ public class AffinityLockTest {
 
     @Test
     public void assignReleaseThread() throws IOException {
-        if (AffinityLock.RESERVED_AFFINITY == 0) {
+	    final CpuLayout defaultLayout = AffinitySupport.getDefaultLayout();
+	    if (AffinityLock.RESERVED_AFFINITY == 0) {
             System.out.println("Cannot run affinity test as no threads gave been reserved.");
             System.out.println("Use isolcpus= in grub.conf or use -D" + AffinityLock.AFFINITY_RESERVED + "={hex mask}");
             return;
-        } else if (!new File("/proc/cpuinfo").exists()) {
-            System.out.println("Cannot run affinity test as this system doesn't have a /proc/cpuinfo file");
+        } else if ( defaultLayout == null) {
+            System.out.println("Cannot run affinity test as this system doesn't have a default CPU layout");
             return;
-        }
-        AffinityLock.cpuLayout(VanillaCpuLayout.fromCpuInfo());
+        } else if ( defaultLayout.cpus() < 2) {
+		    System.out.println("Cannot run affinity test as this config has only " + defaultLayout.cpus() + " cpus");
+		    return;
+	    }
+        AffinityLock.cpuLayout(defaultLayout);
 
         assertEquals(AffinityLock.BASE_AFFINITY, AffinitySupport.getAffinity());
         AffinityLock al = AffinityLock.acquireLock();

@@ -17,11 +17,10 @@
 package net.openhft.affinity.impl;
 
 
-import net.openhft.affinity.IAffinity;
+import net.openhft.affinity.*;
 
-import java.lang.management.ManagementFactory;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.lang.management.*;
+import java.util.logging.*;
 
 /**
  * @author peter.lawrey
@@ -38,7 +37,7 @@ public enum NullAffinity implements IAffinity {
     @Override
     public void setAffinity(final long affinity) {
         if (LOGGER.isLoggable(Level.FINE))
-            LOGGER.fine("unable to set mask to " + Long.toHexString(affinity) + " as the JNIa nd JNA libraries and not loaded");
+            LOGGER.fine("unable to set mask to " + Long.toHexString(affinity) + " as the JNI and JNA libraries are not loaded");
     }
 
     @Override
@@ -56,6 +55,12 @@ public enum NullAffinity implements IAffinity {
     public int getThreadId() {
         throw new UnsupportedOperationException();
     }
+
+	@Override
+	public CpuLayout getDefaultLayout() {
+		// not sure what to return here
+		return null;
+	}
 
 
 }

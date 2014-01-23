@@ -47,4 +47,7 @@ public interface IAffinity {
      * @return the thread id of the current thread or -1 is not available.
      */
     int getThreadId();
+
+	/** @return a platform-independent default CpuLayout or null, if there really is none */
+	CpuLayout getDefaultLayout();
 }

@@ -17,12 +17,11 @@
 package net.openhft.affinity.impl;
 
 import com.sun.jna.*;
-import com.sun.jna.ptr.IntByReference;
-import com.sun.jna.ptr.LongByReference;
-import net.openhft.affinity.IAffinity;
+import com.sun.jna.ptr.*;
+import net.openhft.affinity.*;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.io.*;
+import java.util.logging.*;
 
 
 /**
@@ -132,7 +131,17 @@ public enum PosixJNAAffinity implements IAffinity {
         return -1;
     }
 
-    private static final boolean ISLINUX = "Linux".equals(System.getProperty("os.name"));
+	@Override
+	public CpuLayout getDefaultLayout() {
+		try {
+			return VanillaCpuLayout.fromCpuInfo();
+		} catch (IOException e) {
+			LOGGER.log(Level.WARNING, "cannot create default CpuLayout " + e);
+		}
+		return null;
+	}
+
+	private static final boolean ISLINUX = "Linux".equals(System.getProperty("os.name"));
 
     private static final boolean IS64BIT = is64Bit0();
 
