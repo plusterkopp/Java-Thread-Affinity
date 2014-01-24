@@ -16,17 +16,12 @@
 
 package net.openhft.affinity;
 
-import net.openhft.affinity.impl.NoCpuLayout;
-import net.openhft.affinity.impl.VanillaCpuLayout;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import java.util.*;
+import java.util.logging.*;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.NavigableMap;
-import java.util.TreeMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import net.openhft.affinity.impl.*;
+
+import org.jetbrains.annotations.*;
 
 /**
  * This utility class support locking a thread to a single core, or reserving a whole core for a thread.
@@ -53,26 +48,23 @@ public class AffinityLock {
     private static CpuLayout cpuLayout = new NoCpuLayout(PROCESSORS);
 
     static {
-        try {
-            if (new File("/proc/cpuinfo").exists()) {
-                cpuLayout(VanillaCpuLayout.fromCpuInfo());
-            } else {
-                LOCKS = new AffinityLock[PROCESSORS];
-                CORES = new TreeMap<Integer, AffinityLock[]>();
-                for (int i = 0; i < PROCESSORS; i++) {
-                    AffinityLock al = LOCKS[i] = new AffinityLock(i, ((BASE_AFFINITY >> i) & 1) != 0, ((RESERVED_AFFINITY >> i) & 1) != 0);
+        CpuLayout layout = AffinitySupport.getDefaultLayout();
+		if ( layout != null) {
+		    cpuLayout( layout);
+		} else {
+		    LOCKS = new AffinityLock[PROCESSORS];
+		    CORES = new TreeMap<Integer, AffinityLock[]>();
+		    for (int i = 0; i < PROCESSORS; i++) {
+		        AffinityLock al = LOCKS[i] = new AffinityLock(i, ((BASE_AFFINITY >> i) & 1) != 0, ((RESERVED_AFFINITY >> i) & 1) != 0);
 
-                    final int layoutId = al.cpuId;
-                    int logicalCpuId = coreForId(layoutId);
-                    AffinityLock[] als = CORES.get(logicalCpuId);
-                    if (als == null)
-                        CORES.put(logicalCpuId, als = new AffinityLock[1]);
-                    als[cpuLayout.threadId(layoutId)] = al;
-                }
-            }
-        } catch (IOException e) {
-            LOGGER.log(Level.WARNING, "Unable to load /proc/cpuinfo", e);
-        }
+		        final int layoutId = al.cpuId;
+		        int logicalCpuId = coreForId(layoutId);
+		        AffinityLock[] als = CORES.get(logicalCpuId);
+		        if (als == null)
+		            CORES.put(logicalCpuId, als = new AffinityLock[1]);
+		        als[cpuLayout.threadId(layoutId)] = al;
+		    }
+		}
     }
 
     /**
@@ -239,21 +231,37 @@ public class AffinityLock {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < locks.length; i++) {
             AffinityLock al = locks[i];
-            sb.append(i).append(": ");
-            if (al.assignedThread != null)
-                sb.append(al.assignedThread).append(" alive=").append(al.assignedThread.isAlive());
-            else if (al.reservable)
-                sb.append("Reserved for this application");
-            else if (al.base)
-                sb.append("General use CPU");
-            else
-                sb.append("CPU not available");
+            dumpLock( al, sb);
             sb.append('\n');
         }
         return sb.toString();
     }
 
-    //// Non static fields and methods.
+    public static String dumpLock( AffinityLock al, StringBuilder sb) {
+        final int cpuID = al.cpuId();
+		final CpuLayout cpuLayout = AffinityLock.cpuLayout();
+		if ( cpuID == NONE.cpuId()) {
+			sb.append( "could not bind");
+		} else {
+			sb
+				.append( cpuID)
+				.append(" ").append( cpuLayout.socketId( cpuID))
+				.append("/").append( cpuLayout.coreId( cpuID))
+				.append("/").append( cpuLayout.threadId( cpuID))
+				.append(": ");
+		}
+        if (al.assignedThread != null)
+            sb.append(al.assignedThread).append(" alive=").append(al.assignedThread.isAlive());
+        else if (al.reservable)
+            sb.append("Reserved for this application");
+        else if (al.base)
+            sb.append("General use CPU");
+        else
+            sb.append("CPU not available");
+        return sb.toString();
+	}
+
+	//// Non static fields and methods.
     private final int cpuId;
     private final boolean base;
     private final boolean reservable;

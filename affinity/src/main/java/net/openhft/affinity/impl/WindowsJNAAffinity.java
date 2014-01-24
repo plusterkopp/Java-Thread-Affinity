@@ -16,12 +16,13 @@
 
 package net.openhft.affinity.impl;
 
+import java.util.logging.*;
+
+import net.openhft.affinity.*;
+
 import com.sun.jna.*;
 import com.sun.jna.platform.win32.*;
 import com.sun.jna.ptr.*;
-import net.openhft.affinity.*;
-
-import java.util.logging.*;
 
 /**
  * Implementation of {@link net.openhft.affinity.IAffinity} based on JNA call of
@@ -114,7 +115,7 @@ public enum WindowsJNAAffinity implements IAffinity {
 	 * @see net.openhft.affinity.IAffinity#getDefaultLayout()
 	 */
 	public CpuLayout getDefaultLayout() {
-		String  desc = System.getProperty( "CPUSDESC", "1/1/1");
+		String  desc = System.getProperty( "CPUDESC", "1/1/1");
 		return WindowsCpuLayout.fromCpuDesc( desc);
 	}
 
