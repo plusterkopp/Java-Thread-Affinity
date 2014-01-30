@@ -33,7 +33,7 @@ public class AffinityThreadFactory implements ThreadFactory {
     @NotNull
     private final AffinityStrategy[] strategies;
     @Nullable
-    private AffinityLock lastAffinityLock = null;
+    private volatile AffinityLock lastAffinityLock = null;
     private int id = 1;
 
     public AffinityThreadFactory(String name, AffinityStrategy... strategies) {

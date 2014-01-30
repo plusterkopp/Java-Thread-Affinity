@@ -54,6 +54,16 @@ public enum AffinityStrategies implements AffinityStrategy {
         }
     },
     /**
+     * Must be a cpu on the same socket
+     */
+    SAME_SOCKET_OR_CORE {
+        @Override
+        public boolean matches(int cpuId, int cpuId2) {
+            CpuLayout cpuLayout = AffinityLock.cpuLayout();
+            return cpuLayout.socketId(cpuId) == cpuLayout.socketId(cpuId2);
+        }
+    },
+    /**
      * Must be a cpu on any other core (or socket)
      */
     DIFFERENT_CORE {
