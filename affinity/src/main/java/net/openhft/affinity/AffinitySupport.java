@@ -1,96 +1,32 @@
 /*
- * Copyright 2013 Peter Lawrey
+ *     Copyright (C) 2015  higherfrequencytrading.com
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *     This program is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU Lesser General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License.
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ *     This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU Lesser General Public License for more details.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *     You should have received a copy of the GNU Lesser General Public License
+ *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package net.openhft.affinity;
 
-import net.openhft.affinity.impl.NullAffinity;
-import net.openhft.affinity.impl.PosixJNAAffinity;
-import net.openhft.affinity.impl.WindowsJNAAffinity;
-import org.jetbrains.annotations.NotNull;
-
-import java.lang.reflect.Field;
-import java.util.logging.Logger;
-
 /**
- * Library to wrap low level JNI or JNA calls.  Can be called without needing to know the actual implementation used.
- *
- * @author peter.lawrey
+ * For backward compatibility with Affinity 2.x
  */
-public enum AffinitySupport {
-    ;
-    @NotNull
-    private static final IAffinity AFFINITY_IMPL;
-    private static final Logger LOGGER = Logger.getLogger(AffinitySupport.class.getName());
-    private static Boolean JNAAvailable;
-
-    static {
-        String osName = System.getProperty("os.name");
-        if (osName.contains("Win") && isJNAAvailable() && WindowsJNAAffinity.LOADED) {
-            LOGGER.fine("Using Windows JNA-based affinity control implementation");
-            AFFINITY_IMPL = WindowsJNAAffinity.INSTANCE;
-        } else if (osName.contains("x") && isJNAAvailable() && PosixJNAAffinity.LOADED) {
-            LOGGER.fine("Using Posix JNA-based affinity control implementation");
-            AFFINITY_IMPL = PosixJNAAffinity.INSTANCE;
-        } else {
-            LOGGER.info("Using dummy affinity control implementation");
-            AFFINITY_IMPL = NullAffinity.INSTANCE;
-        }
-    }
-
-	public static CpuLayout getDefaultLayout() {
-		return AFFINITY_IMPL.getDefaultLayout();
-	}
-
-    public static long getAffinity() {
-        return AFFINITY_IMPL.getAffinity();
-    }
-
-    public static void setAffinity(final long affinity) {
-        AFFINITY_IMPL.setAffinity(affinity);
-    }
-
-    public static int getCpu() {
-        return AFFINITY_IMPL.getCpu();
-    }
+@Deprecated
+public class AffinitySupport {
 
     public static int getThreadId() {
-        return AFFINITY_IMPL.getThreadId();
+        return Affinity.getThreadId();
     }
-
-    public static boolean isJNAAvailable() {
-        if (JNAAvailable == null)
-            try {
-                Class.forName("com.sun.jna.Platform");
-                JNAAvailable = true;
-            } catch (ClassNotFoundException ignored) {
-                JNAAvailable = false;
-            }
-        return JNAAvailable;
-    }
-
     public static void setThreadId() {
-        try {
-            int threadId = getThreadId();
-            final Field tid = Thread.class.getDeclaredField("tid");
-            tid.setAccessible(true);
-            final Thread thread = Thread.currentThread();
-            tid.setLong(thread, threadId);
-            Logger.getAnonymousLogger().info("Set " + thread.getName() + " to thread id " + threadId);
-        } catch (Exception e) {
-            throw new IllegalStateException(e);
-        }
+        Affinity.setThreadId();
     }
+
 }

@@ -1,34 +1,39 @@
 /*
- * Copyright 2013 Peter Lawrey
+ *     Copyright (C) 2015  higherfrequencytrading.com
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *     This program is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU Lesser General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License.
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ *     This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU Lesser General Public License for more details.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *     You should have received a copy of the GNU Lesser General Public License
+ *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package net.openhft.affinity.impl;
 
 import com.sun.jna.*;
-import com.sun.jna.ptr.*;
+import com.sun.jna.ptr.IntByReference;
+import com.sun.jna.ptr.LongByReference;
+import com.sun.jna.ptr.PointerByReference;
 import net.openhft.affinity.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.logging.*;
-
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.BitSet;
 
 /**
  * Implementation of {@link IAffinity} based on JNA call of
  * sched_setaffinity(3)/sched_getaffinity(3) from 'c' library. Applicable for most
  * linux/unix platforms
- * <p/>
+ * <p>
  * TODO Support assignment to core 64 and above
  *
  * @author peter.lawrey
@@ -37,54 +42,97 @@ import java.util.logging.*;
 public enum PosixJNAAffinity implements IAffinity {
     INSTANCE;
     public static final boolean LOADED;
-    private static final Logger LOGGER = Logger.getLogger(PosixJNAAffinity.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(PosixJNAAffinity.class);
     private static final String LIBRARY_NAME = Platform.isWindows() ? "msvcrt" : "c";
 
     @Override
-    public long getAffinity() {
+    public BitSet getAffinity()
+    {
         final CLibrary lib = CLibrary.INSTANCE;
-        // TODO where are systems with 64+ cores...
-        final LongByReference cpuset = new LongByReference(0L);
+        final int procs = Runtime.getRuntime().availableProcessors();
+
+        final int cpuSetSizeInLongs = (procs + 63) / 64;
+        final int cpuSetSizeInBytes = cpuSetSizeInLongs * 8;
+        final Memory cpusetArray = new Memory(cpuSetSizeInBytes);
+        final PointerByReference cpuset = new PointerByReference(cpusetArray);
         try {
-            final int ret = lib.sched_getaffinity(0, Long.SIZE / 8, cpuset);
+            final int ret = lib.sched_getaffinity(0, cpuSetSizeInBytes, cpuset);
             if (ret < 0)
-                throw new IllegalStateException("sched_getaffinity((" + Long.SIZE / 8 + ") , &(" + cpuset + ") ) return " + ret);
-            return cpuset.getValue();
-        } catch (LastErrorException e) {
-            if (e.getErrorCode() != 22)
-                throw new IllegalStateException("sched_getaffinity((" + Long.SIZE / 8 + ") , &(" + cpuset + ") ) errorNo=" + e.getErrorCode(), e);
+            {
+                throw new IllegalStateException("sched_getaffinity((" + cpuSetSizeInBytes + ") , &(" + cpusetArray + ") ) return " + ret);
+            }
+            ByteBuffer buff = cpusetArray.getByteBuffer(0, cpuSetSizeInBytes);
+            return BitSet.valueOf(buff.array());
         }
+        catch (LastErrorException e)
+        {
+            if (e.getErrorCode() != 22)
+            {
+                throw new IllegalStateException("sched_getaffinity((" + cpuSetSizeInBytes + ") , &(" + cpusetArray + ") ) errorNo=" + e.getErrorCode(), e);
+            }
+        }
+
+        // fall back to the old method
         final IntByReference cpuset32 = new IntByReference(0);
-        try {
+        try
+        {
             final int ret = lib.sched_getaffinity(0, Integer.SIZE / 8, cpuset32);
             if (ret < 0)
+            {
                 throw new IllegalStateException("sched_getaffinity((" + Integer.SIZE / 8 + ") , &(" + cpuset32 + ") ) return " + ret);
-            return cpuset32.getValue();
-        } catch (LastErrorException e) {
+            }
+            long[] longs = new long[1];
+            longs[0] = cpuset32.getValue() & 0xFFFFFFFFL;
+            return BitSet.valueOf(longs);
+        }
+        catch (LastErrorException e)
+        {
             throw new IllegalStateException("sched_getaffinity((" + Integer.SIZE / 8 + ") , &(" + cpuset32 + ") ) errorNo=" + e.getErrorCode(), e);
         }
     }
 
     @Override
-    public void setAffinity(final long affinity) {
-        final CLibrary lib = CLibrary.INSTANCE;
-        try {
-            //fixme: where are systems with more then 64 cores...
-            final int ret = lib.sched_setaffinity(0, Long.SIZE / 8, new LongByReference(affinity));
-            if (ret < 0) {
-                throw new IllegalStateException("sched_setaffinity((" + Long.SIZE / 8 + ") , &(" + affinity + ") ) return " + ret);
-            }
-        } catch (LastErrorException e) {
-            if (e.getErrorCode() != 22)
-                throw new IllegalStateException("sched_getaffinity((" + Long.SIZE / 8 + ") , &(" + affinity + ") ) errorNo=" + e.getErrorCode(), e);
+    public void setAffinity(final BitSet affinity) {
+        int procs = Runtime.getRuntime().availableProcessors();
+        if (affinity.isEmpty())
+        {
+            throw new IllegalArgumentException("Cannot set zero affinity");
         }
-        try {
-            final int ret = lib.sched_setaffinity(0, Integer.SIZE / 8, new IntByReference((int) affinity));
-            if (ret < 0) {
-                throw new IllegalStateException("sched_setaffinity((" + Integer.SIZE / 8 + ") , &(" + affinity + ") ) return " + ret);
+
+        final CLibrary lib = CLibrary.INSTANCE;
+        byte[] buff = affinity.toByteArray();
+        final int cpuSetSizeInBytes = buff.length;
+        final Memory cpusetArray = new Memory(cpuSetSizeInBytes);
+        try
+        {
+            cpusetArray.write(0, buff, 0, buff.length);
+            final int ret = lib.sched_setaffinity(0, cpuSetSizeInBytes, new PointerByReference(cpusetArray));
+            if (ret < 0)
+            {
+                throw new IllegalStateException("sched_setaffinity((" + cpuSetSizeInBytes + ") , &(" + affinity + ") ) return " + ret);
             }
+        }
+        catch (LastErrorException e)
+        {
+            if (e.getErrorCode() != 22 || !Arrays.equals(buff, cpusetArray.getByteArray(0, cpuSetSizeInBytes)))
+            {
+                throw new IllegalStateException("sched_setaffinity((" + cpuSetSizeInBytes + ") , &(" + affinity + ") ) errorNo=" + e.getErrorCode(), e);
+            }
+        }
+
+        final int value = (int) affinity.toLongArray()[0];
+        if (value == 0)
+        {
+            throw new IllegalArgumentException("Cannot set zero affinity");
+        }
+        final IntByReference cpuset32 = new IntByReference(0);
+        cpuset32.setValue(value);
+        try {
+            final int ret = lib.sched_setaffinity(0, Integer.SIZE / 8, cpuset32);
+            if (ret < 0)
+                throw new IllegalStateException("sched_setaffinity((" + Integer.SIZE / 8 + ") , &(" + Integer.toHexString(cpuset32.getValue()) + ") ) return " + ret);
         } catch (LastErrorException e) {
-            throw new IllegalStateException("sched_getaffinity((" + Integer.SIZE / 8 + ") , &(" + affinity + ") ) errorNo=" + e.getErrorCode(), e);
+            throw new IllegalStateException("sched_setaffinity((" + Integer.SIZE / 8 + ") , &(" + Integer.toHexString(cpuset32.getValue()) + ") ) errorNo=" + e.getErrorCode(), e);
         }
     }
 
@@ -98,6 +146,19 @@ public enum PosixJNAAffinity implements IAffinity {
             return ret;
         } catch (LastErrorException e) {
             throw new IllegalStateException("sched_getcpu( ) errorNo=" + e.getErrorCode(), e);
+        } catch (UnsatisfiedLinkError ule) {
+            try {
+                final IntByReference cpu = new IntByReference();
+                final IntByReference node = new IntByReference();
+                final int ret = lib.syscall(318, cpu, node, null);
+                if (ret != 0) {
+                    throw new IllegalStateException("getcpu( ) return " + ret);
+                }
+
+                return cpu.getValue();
+            } catch (LastErrorException lee) {
+                throw new IllegalStateException("getcpu( ) errorNo=" + lee.getErrorCode(), lee);
+            }
         }
     }
 
@@ -131,16 +192,6 @@ public enum PosixJNAAffinity implements IAffinity {
         return -1;
     }
 
-	@Override
-	public CpuLayout getDefaultLayout() {
-		try {
-			return VanillaCpuLayout.fromCpuInfo();
-		} catch (IOException e) {
-			LOGGER.log(Level.WARNING, "cannot create default CpuLayout " + e);
-		}
-		return null;
-	}
-
 	private static final boolean ISLINUX = "Linux".equals(System.getProperty("os.name"));
 
     private static final boolean IS64BIT = is64Bit0();
@@ -167,7 +218,6 @@ public enum PosixJNAAffinity implements IAffinity {
         return systemProp != null && systemProp.contains("_64");
     }
 
-
     /**
      * @author BegemoT
      */
@@ -185,6 +235,10 @@ public enum PosixJNAAffinity implements IAffinity {
 
         int sched_getcpu() throws LastErrorException;
 
+        int getcpu(final IntByReference cpu,
+                   final IntByReference node,
+                   final PointerType tcache) throws LastErrorException;
+
         int getpid() throws LastErrorException;
 
         int syscall(int number, Object... args) throws LastErrorException;
@@ -196,7 +250,7 @@ public enum PosixJNAAffinity implements IAffinity {
             INSTANCE.getAffinity();
             loaded = true;
         } catch (UnsatisfiedLinkError e) {
-            LOGGER.log(Level.WARNING, "Unable to load jna library " + e);
+            LOGGER.warn("Unable to load jna library {}", e);
         }
         LOADED = loaded;
     }

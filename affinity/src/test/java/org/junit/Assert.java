@@ -1,17 +1,17 @@
 /*
- * Copyright 2013 Peter Lawrey
+ *     Copyright (C) 2015  higherfrequencytrading.com
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *     This program is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU Lesser General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License.
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ *     This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU Lesser General Public License for more details.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *     You should have received a copy of the GNU Lesser General Public License
+ *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package org.junit;
@@ -24,12 +24,12 @@ import org.junit.internal.InexactComparisonCriteria;
 
 /**
  * TODO replace with 4.12 when it is released with a simple bug fix.
- * <p/>
+ * <p>
  * A set of assertion methods useful for writing tests. Only failed assertions
  * are recorded. These methods can be used directly:
  * <code>Assert.assertEquals(...)</code>, however, they read better if they
  * are referenced through static import:<br/>
- * <p/>
+ * <p>
  * <pre>
  * import static org.junit.Assert.*;
  *    ...
@@ -128,10 +128,12 @@ public class Assert {
                                     Object actual) {
         if (equalsRegardingNull(expected, actual)) {
             return;
+
         } else if (expected instanceof String && actual instanceof String) {
             String cleanMessage = message == null ? "" : message;
             throw new ComparisonFailure(cleanMessage, (String) expected,
                     (String) actual);
+
         } else {
             failNotEquals(message, expected, actual);
         }
@@ -542,11 +544,8 @@ public class Assert {
         if (Double.compare(d1, d2) == 0) {
             return false;
         }
-        if ((Math.abs(d1 - d2) <= delta)) {
-            return false;
-        }
+        return (Math.abs(d1 - d2) > delta);
 
-        return true;
     }
 
     /**
@@ -576,8 +575,8 @@ public class Assert {
 
     /**
      * @deprecated Use
-     *             <code>assertEquals(double expected, double actual, double delta)</code>
-     *             instead
+     * <code>assertEquals(double expected, double actual, double delta)</code>
+     * instead
      */
     @Deprecated
     static public void assertEquals(double expected, double actual) {
@@ -586,8 +585,8 @@ public class Assert {
 
     /**
      * @deprecated Use
-     *             <code>assertEquals(String message, double expected, double actual, double delta)</code>
-     *             instead
+     * <code>assertEquals(String message, double expected, double actual, double delta)</code>
+     * instead
      */
     @Deprecated
     static public void assertEquals(String message, double expected,
@@ -623,7 +622,6 @@ public class Assert {
      *                 <code>actual</code> for which both numbers are still
      *                 considered equal.
      */
-
     static public void assertEquals(float expected, float actual, float delta) {
         assertEquals(null, expected, actual, delta);
     }
@@ -773,6 +771,7 @@ public class Assert {
             return formatted + "expected: "
                     + formatClassAndValue(expected, expectedString)
                     + " but was: " + formatClassAndValue(actual, actualString);
+
         } else {
             return formatted + "expected:<" + expectedString + "> but was:<"
                     + actualString + ">";
@@ -825,7 +824,7 @@ public class Assert {
      * Asserts that <code>actual</code> satisfies the condition specified by
      * <code>matcher</code>. If not, an {@link AssertionError} is thrown with
      * information about the matcher and failing value. Example:
-     * <p/>
+     * <p>
      * <pre>
      *   assertThat(0, is(1)); // fails:
      *     // failure message:
@@ -833,7 +832,7 @@ public class Assert {
      *     // got value: &lt;0&gt;
      *   assertThat(0, is(not(1))) // passes
      * </pre>
-     * <p/>
+     * <p>
      * <code>org.hamcrest.Matcher</code> does not currently document the meaning
      * of its type parameter <code>T</code>.  This method assumes that a matcher
      * typed as <code>Matcher&lt;T&gt;</code> can be meaningfully applied only
@@ -855,7 +854,7 @@ public class Assert {
      * Asserts that <code>actual</code> satisfies the condition specified by
      * <code>matcher</code>. If not, an {@link AssertionError} is thrown with
      * the reason and information about the matcher and failing value. Example:
-     * <p/>
+     * <p>
      * <pre>
      *   assertThat(&quot;Help! Integers don't work&quot;, 0, is(1)); // fails:
      *     // failure message:
@@ -864,7 +863,7 @@ public class Assert {
      *     // got value: &lt;0&gt;
      *   assertThat(&quot;Zero is one&quot;, 0, is(not(1))) // passes
      * </pre>
-     * <p/>
+     * <p>
      * <code>org.hamcrest.Matcher</code> does not currently document the meaning
      * of its type parameter <code>T</code>.  This method assumes that a matcher
      * typed as <code>Matcher&lt;T&gt;</code> can be meaningfully applied only

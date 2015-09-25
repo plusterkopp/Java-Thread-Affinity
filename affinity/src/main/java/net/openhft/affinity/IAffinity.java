@@ -1,20 +1,22 @@
 /*
- * Copyright 2013 Peter Lawrey
+ *     Copyright (C) 2015  higherfrequencytrading.com
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *     This program is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU Lesser General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License.
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ *     This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU Lesser General Public License for more details.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *     You should have received a copy of the GNU Lesser General Public License
+ *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package net.openhft.affinity;
+
+import java.util.BitSet;
 
 /**
  * Implementation interface
@@ -24,14 +26,14 @@ package net.openhft.affinity;
  */
 public interface IAffinity {
     /**
-     * @return returns affinity mask for current thread, or -1 if unknown
+     * @return returns affinity mask for current thread, or null if unknown
      */
-    long getAffinity();
+    BitSet getAffinity();
 
     /**
      * @param affinity sets affinity mask of current thread to specified value
      */
-    void setAffinity(final long affinity);
+    void setAffinity(final BitSet affinity);
 
     /**
      * @return the current cpu id, or -1 if unknown.
@@ -49,5 +51,5 @@ public interface IAffinity {
     int getThreadId();
 
 	/** @return a platform-independent default CpuLayout or null, if there really is none */
-	CpuLayout getDefaultLayout();
+//	CpuLayout getDefaultLayout();
 }
