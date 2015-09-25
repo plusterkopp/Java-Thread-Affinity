@@ -208,7 +208,18 @@ public class VanillaCpuLayout implements CpuLayout {
     }
 
     static class CpuInfo {
-        int socketId, coreId, threadId;
+        /**
+         * count from 0 to # phys sockets
+         */
+        int socketId;
+        /**
+         * count over all phys cores
+         */
+        int coreId;
+        /**
+         * relative to coreId
+         */
+        int threadId;
 
         CpuInfo() {
         }

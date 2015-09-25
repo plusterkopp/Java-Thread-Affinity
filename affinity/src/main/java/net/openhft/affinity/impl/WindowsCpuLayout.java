@@ -29,7 +29,7 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 		return vanillaDetails;
 	}
 
-	public static CpuLayout fromSysInfo(WindowsJNAAffinity.SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX[] sysInfo) {
+	public static WindowsCpuLayout fromSysInfo(WindowsJNAAffinity.SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX[] sysInfo) {
 		List<WindowsCpuLayout.CpuInfo> cpuInfos = WindowsCpuLayout.asCpuInfos( sysInfo);
 		return new WindowsCpuLayout( cpuInfos);
 	}
@@ -55,6 +55,7 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 	        }
 	    }
 
+		// create and set up CpuInfos
 	    int id = 0;
 	    int bits = 0;
 	    for ( Group g : groups) {
@@ -63,9 +64,13 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 	    }
 	    List<CpuInfo> cpuInfos = createInfoList( bits);
 
-	    for ( Group g : groups) {
-	        g.setEntityIds(cpuInfos, pos -> cpuInfos.get(pos).groupdId = g.id);
-	    }
+		try {
+			for (Group g : groups) {
+				g.setEntityIds(cpuInfos, pos -> cpuInfos.get(pos).groupId = g.id);
+			}
+		} catch ( Exception e) {
+			throw e;
+		}
 	    id = 0;
 	    for ( NumaNode n : nodes) {
 	        n.id = id++;
@@ -74,24 +79,61 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 	    id = 0;
 	    for ( Package p : packages) {
 	        p.id = id++;
-	        p.setEntityIds( cpuInfos, pos -> cpuInfos.get( pos).numaId = p.id);
+	        p.setEntityIds( cpuInfos, pos -> cpuInfos.get( pos).socketId = p.id);
 	    }
 	    id = 0;
 	    for ( Core c : cores) {
 	        c.id = id++;
 	        c.setEntityIds( cpuInfos, pos -> cpuInfos.get( pos).coreId = c.id);
 	    }
+		List<Core> coreList = new ArrayList<>( cores);
+		// set threadIds to be relative to coreId
+		for ( int i = 0;  i < cpuInfos.size();  i++) {
+			CpuInfo cpuInfo = cpuInfos.get( i);
+			if ( i == 0) {  // first one is 0
+				cpuInfo.threadId = 0;
+			} else {    // if last info share the same core, increment our threadId over the last one
+				CpuInfo prev = cpuInfos.get( i-1);
+				if ( prev.coreId == cpuInfo.coreId) {
+					cpuInfo.threadId = prev.threadId + 1;
+				} else {    // if new core, start threadId at 0
+					cpuInfo.threadId = 0;
+				}
+			}
+			// starting from the mask of the corresponding core, retain the set bit at position threadId and clear all others, remember the resulting mask for this cpuInfo
+			Core c = coreList.get( cpuInfo.coreId);
+			BitSet coreMask = WindowsJNAAffinity.asBitSet(c.mask.mask);
+			int setBitCount = 0;
+			int p;
+			for ( p = coreMask.nextSetBit( 0);  p >= 0;  p = coreMask.nextSetBit( p+1)) {
+				if ( setBitCount != cpuInfo.threadId) {
+					coreMask.clear( p);
+				}
+				setBitCount++;
+			}
+			long[]  maskRet = coreMask.toLongArray();
+			try {
+				cpuInfo.mask = maskRet[0];
+			} catch ( Exception e) {
+				throw e;
+			}
+		}
 	    return cpuInfos;
 	}
 
-	public static List<CpuInfo> createInfoList( int size) {
-		List<WindowsCpuLayout.CpuInfo> cpuInfos0 = new ArrayList<>( size);
+	/**
+	 * @param size
+	 * @return unmodifiable List of size CpuInfo
+	 */
+	@NotNull
+	private static List<CpuInfo> createInfoList(int size) {
+		List<WindowsCpuLayout.CpuInfo> cpuInfos = new ArrayList<>( size);
 		for ( int i = 0;  i < size;  i++) {
 			final CpuInfo cpuInfo = new CpuInfo();
 			cpuInfo.threadId = i;
-			cpuInfos0.add( cpuInfo);
+			cpuInfos.add(cpuInfo);
 		}
-		return Collections.unmodifiableList( cpuInfos0);
+		return Collections.unmodifiableList( cpuInfos);
 	}
 
 	/**
@@ -124,7 +166,7 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 
 	@Override
 	public int groupId(int cpuId) {
-		return cpuDetailsFull.get( cpuId).groupdId;
+		return cpuDetailsFull.get( cpuId).groupId;
 	}
 
 	@Override
@@ -132,9 +174,43 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 		return cpuDetailsFull.get( cpuId).numaId;
 	}
 
+	public int findCpuInfo(int groupId, int lCPUInGroup) {
+		if ( lCPUInGroup > 63) {
+			return -1;
+		}
+		BitSet bs = new BitSet( 64);
+		bs.set( lCPUInGroup);
+		long[]    maskA = bs.toLongArray();
+		for ( int i = 0;  i < cpuDetailsFull.size();  i++) {
+			CpuInfo cpuInfo = cpuDetailsFull.get( i);
+			if ( cpuInfo.groupId != groupId) {
+				continue;
+			}
+			if ( cpuInfo.mask != maskA[ 0]) {
+				continue;
+			}
+			return i;
+		}
+		return -1;
+	}
+
+	public CpuInfo lCpu(int index) {
+		return cpuDetailsFull.get( index);
+	}
+
+	public void visitCpus( Consumer<CpuInfo> c) {
+		for ( CpuInfo info : cpuDetailsFull) {
+			c.accept( info);
+		}
+	}
+
+	/**
+	 * add numaId, groupId
+	 */
 	static class CpuInfo extends VanillaCpuLayout.CpuInfo {
 		int numaId = 0;
-		int groupdId = 0;
+		int groupId = 0;
+		long mask = 0;
 
 		CpuInfo() {}
 
@@ -145,7 +221,7 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 		CpuInfo(int socketId, int coreId, int threadId, int numaId, int groupId) {
 			super( socketId, coreId, threadId);
 			this.numaId = numaId;
-			this.groupdId = groupId;
+			this.groupId = groupId;
 		}
 
 		@NotNull
@@ -156,7 +232,8 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 					", coreId=" + coreId +
 					", threadId=" + threadId +
 					", numaId=" + numaId +
-					", groupId=" + groupdId +
+					", groupId=" + groupId +
+					", mask=" + WindowsJNAAffinity.asBitSet( mask) +
 					'}';
 		}
 
@@ -167,7 +244,7 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 
 			CpuInfo cpuInfo = (CpuInfo) o;
 
-			if (groupdId != cpuInfo.groupdId) return false;
+			if (groupId != cpuInfo.groupId) return false;
 			if (numaId != cpuInfo.numaId) return false;
 			if (coreId != cpuInfo.coreId) return false;
 			if (socketId != cpuInfo.socketId) return false;
@@ -177,7 +254,7 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 
 		@Override
 		public int hashCode() {
-			int result = groupdId;
+			int result = groupId;
 			result = 31 * result + numaId;
 			result = 31 * result + socketId;
 			result = 31 * result + coreId;
@@ -279,10 +356,9 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 	        super.setEntityIds(cpuInfos, c);
 	        for ( int i = 0;  i < cpuInfos.size();  i++) {
 	            CpuInfo info = cpuInfos.get( i);
-	            if ( info.groupdId == id) {
+	            if ( info.groupId == id) {
 	            }
 	        }
 	    }
-
 	}
 }

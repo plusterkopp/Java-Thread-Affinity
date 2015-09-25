@@ -54,6 +54,21 @@ public enum AffinityStrategies implements AffinityStrategy {
         }
     },
     /**
+     * Must be a cpu on same node.
+     */
+    SAME_NODE {
+        @Override
+        public boolean matches(int cpuId, int cpuId2) {
+            CpuLayout cpuLayout = AffinityLock.cpuLayout();
+            // always match if no numa support
+            if ( ! ( cpuLayout instanceof NumaCpuLayout)) {
+                return true;
+            }
+            NumaCpuLayout numaLayout = (NumaCpuLayout) cpuLayout;
+            return numaLayout.numaId(cpuId) == numaLayout.numaId(cpuId2);
+        }
+    },
+    /**
      * Must be a cpu on any other core (or socket)
      */
     DIFFERENT_CORE {
@@ -72,6 +87,21 @@ public enum AffinityStrategies implements AffinityStrategy {
         public boolean matches(int cpuId, int cpuId2) {
             CpuLayout cpuLayout = AffinityLock.cpuLayout();
             return cpuLayout.socketId(cpuId) != cpuLayout.socketId(cpuId2);
+        }
+    },
+    /**
+     * Must be a cpu on any other node.
+     */
+    DIFFERENT_NODE {
+        @Override
+        public boolean matches(int cpuId, int cpuId2) {
+            CpuLayout cpuLayout = AffinityLock.cpuLayout();
+            // always match if no numa support
+            if ( ! ( cpuLayout instanceof NumaCpuLayout)) {
+                return true;
+            }
+            NumaCpuLayout numaLayout = (NumaCpuLayout) cpuLayout;
+            return numaLayout.numaId(cpuId) != numaLayout.numaId(cpuId2);
         }
     }
 }
