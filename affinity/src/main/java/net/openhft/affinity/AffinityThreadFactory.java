@@ -50,7 +50,7 @@ public class AffinityThreadFactory implements ThreadFactory {
     @NotNull
     @Override
     public synchronized Thread newThread(@NotNull final Runnable r) {
-        String name2 = id <= 1 ? name : (name + '-' + id);
+        final String name2 = id < 1 ? name : (name + '-' + id);
         id++;
         Thread t = new Thread(new Runnable() {
             @Override
@@ -59,6 +59,7 @@ public class AffinityThreadFactory implements ThreadFactory {
                 try {
                     if (al.cpuId() >= 0)
                         lastAffinityLock = al;
+                    beforeRun( al, Thread.currentThread());
                     r.run();
                 } finally {
                     al.release();
@@ -68,4 +69,7 @@ public class AffinityThreadFactory implements ThreadFactory {
         t.setDaemon(daemon);
         return t;
     }
+
+	protected void beforeRun( AffinityLock al, Thread currentThread) {
+	}
 }

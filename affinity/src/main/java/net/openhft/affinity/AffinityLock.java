@@ -322,4 +322,8 @@ public class AffinityLock implements Closeable {
     public static void main(String[] args) {
         System.out.println("Test");
     }
+
+	public static AffinityLock acquireLock(boolean bind, AffinityStrategies different, int[] cpuIds) {
+		return LOCK_INVENTORY.acquireLock(bind, different, cpuIds);
+	}
 }

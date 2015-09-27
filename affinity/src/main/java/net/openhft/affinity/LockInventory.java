@@ -79,6 +79,40 @@ class LockInventory {
         }
     }
 
+	/**
+	 * useful only with {@link AffinityStrategies#DIFFERENT_CORE} or {@link AffinityStrategies#DIFFERENT_SOCKET}. Falls
+	 * back to {@link #acquireLock()} if no suitable {@link AffinityLock} found. {@link AffinityStrategies#SAME_SOCKET}
+	 * and {@link AffinityStrategies#SAME_CORE} are valid arguments, too, but make no sense with more than one cpuId
+	 *
+	 * @param bind
+	 *            see {@link #assignCurrentThread(boolean, boolean)}
+	 * @param strategy
+	 *            {@link AffinityStrategy}
+	 * @param cpuIds
+	 *            list of cpuIds whose core/socket we must avoid
+	 * @return matching {@link AffinityLock}
+	 */
+	public synchronized AffinityLock acquireLock( boolean bind, @NotNull AffinityStrategy strategy, int... cpuIds) {
+		synchronized ( AffinityLock.class) {
+			NextLock: for ( int i = logicalCoreLocks.length - 1; i > 0; i--) {
+				AffinityLock al = logicalCoreLocks[ i];
+				if ( al.canReserve()) {
+					// must match the DIFFERENT-clause for all cpuIds
+					for ( int cpuId : cpuIds) {
+						if ( ! strategy.matches( cpuId, al.cpuId())) {
+							continue NextLock; // no match, try next lock
+						}
+					}
+					// matched all cpuIds
+					al.assignCurrentThread( bind, false);
+					return al;
+				}
+			}
+			// still no match: try ANY
+			return AffinityLock.acquireLock( bind);
+		}
+	}
+
     public final synchronized AffinityLock acquireLock(boolean bind, int cpuId, AffinityStrategy... strategies) {
         for (AffinityStrategy strategy : strategies) {
             // consider all processors except cpu 0 which is usually used by the OS.
