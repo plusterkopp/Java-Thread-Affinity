@@ -65,7 +65,7 @@ public enum AffinityStrategies implements AffinityStrategy {
                 return true;
             }
             NumaCpuLayout numaLayout = (NumaCpuLayout) cpuLayout;
-            return numaLayout.numaId(cpuId) == numaLayout.numaId(cpuId2);
+            return numaLayout.numaNodeId(cpuId) == numaLayout.numaNodeId(cpuId2);
         }
     },
     /**
@@ -101,7 +101,7 @@ public enum AffinityStrategies implements AffinityStrategy {
                 return true;
             }
             NumaCpuLayout numaLayout = (NumaCpuLayout) cpuLayout;
-            return numaLayout.numaId(cpuId) != numaLayout.numaId(cpuId2);
+            return numaLayout.numaNodeId(cpuId) != numaLayout.numaNodeId(cpuId2);
         }
     }
 }

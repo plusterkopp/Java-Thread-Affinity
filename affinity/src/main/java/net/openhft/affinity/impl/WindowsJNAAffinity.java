@@ -101,6 +101,8 @@ public enum WindowsJNAAffinity implements IAffinity, INumaAffinity, IGroupAffini
     }
 
     private final ThreadLocal<Integer> THREAD_ID = new ThreadLocal<>();
+    private final ThreadLocal<PROCESSOR_NUMBER.ByReference> ProcNumRef =
+            ThreadLocal.withInitial( () -> new PROCESSOR_NUMBER.ByReference());
 
     public SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX[] getLogicalProcessorInformation() {
         return getLogicalProcessorInformation(WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationAll);
@@ -568,7 +570,7 @@ public enum WindowsJNAAffinity implements IAffinity, INumaAffinity, IGroupAffini
 
     @Override
     public int getCpu() {
-        PROCESSOR_NUMBER.ByReference procNumRef = new PROCESSOR_NUMBER.ByReference();
+        PROCESSOR_NUMBER.ByReference procNumRef = ProcNumRef.get();
         LibKernel32.INSTANCE.GetCurrentProcessorNumberEx(procNumRef);
         CpuLayout    cpuLayout = INSTANCE.getDefaultLayout();
         if ( cpuLayout instanceof WindowsCpuLayout) {

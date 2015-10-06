@@ -57,7 +57,7 @@ public class AffinityLock implements Closeable {
                 IAffinity impl = Affinity.getAffinityImpl();
                 if ( impl instanceof IDefaultLayoutAffinity) {
                     IDefaultLayoutAffinity  idla = (IDefaultLayoutAffinity) impl;
-                    idla.getDefaultLayout();
+                    cpuLayout(idla.getDefaultLayout());
                 }
             }
     }
@@ -163,7 +163,7 @@ public class AffinityLock implements Closeable {
      * @return A handle for an affinity lock.
      */
     public static AffinityLock acquireLock(boolean bind) {
-        return acquireLock(bind, -1, AffinityStrategies.ANY);
+        return acquireLock(bind, - 1, AffinityStrategies.ANY);
     }
 
     /**
@@ -175,7 +175,7 @@ public class AffinityLock implements Closeable {
      * @return A handle for an affinity lock.
      */
     public static AffinityLock acquireCore(boolean bind) {
-        return acquireCore(bind, -1, AffinityStrategies.ANY);
+        return acquireCore(bind, - 1, AffinityStrategies.ANY);
     }
 
     private static AffinityLock acquireLock(boolean bind, int cpuId, @NotNull AffinityStrategy... strategies) {

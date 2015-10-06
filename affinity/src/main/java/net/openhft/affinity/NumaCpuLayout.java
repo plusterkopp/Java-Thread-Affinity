@@ -6,6 +6,7 @@ package net.openhft.affinity;
  */
 public interface NumaCpuLayout {
 
-	int numaId( int socketId);
+	int numaNodeId( int cpuId);
 
+	int numaNodes();
 }

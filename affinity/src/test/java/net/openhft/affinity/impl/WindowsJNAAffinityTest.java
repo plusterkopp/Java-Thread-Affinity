@@ -144,15 +144,15 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 
 	@Test
 	public void testCpuInfoSwitch() {
-		WindowsCpuLayout    l = (WindowsCpuLayout) WinImpl.getDefaultLayout();
+		WindowsCpuLayout    cpuLayout = (WindowsCpuLayout) WinImpl.getDefaultLayout();
 		int index = WinImpl.getCpu();
-		WindowsCpuLayout.CpuInfo current = l.lCpu(index);
+		WindowsCpuLayout.CpuInfo current = cpuLayout.lCpu(index);
 		System.out.println( "running on #" + index + ": " + current);
-		l.visitCpus(info1 -> {
+		cpuLayout.visitCpus(info1 -> {
 			long switched = System.nanoTime();
 			WinImpl.setGroupAffinity(info1.groupId, info1.mask);
 			int i = WinImpl.getCpu();
-			WindowsCpuLayout.CpuInfo curr = l.lCpu(i);
+			WindowsCpuLayout.CpuInfo curr = cpuLayout.lCpu(i);
 			assertEquals("running on " + curr + ", not " + info1, info1, curr);
 			long since = System.nanoTime() - switched;
 			System.out.println("time: " + (since * 1e-3) + " µs, running on " + curr);

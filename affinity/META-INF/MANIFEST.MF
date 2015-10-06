@@ -1,0 +1,7 @@
+Manifest-Version: 1.0
+Main-Class: net.openhft.affinity.AffinityLock
+Implementation-Title: net.openhft.affinity
+Implementation-Vendor: OpenHFT
+Implementation-Version: 3.0
+Export-Package: java.lang,net.openhft
+Bundle-NativeCode:  win32-x86-64/affinityInfo.dll; processor=x86-64; osname=win32

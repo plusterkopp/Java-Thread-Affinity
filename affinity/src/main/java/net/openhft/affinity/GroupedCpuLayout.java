@@ -6,6 +6,8 @@ package net.openhft.affinity;
  */
 public interface GroupedCpuLayout {
 
-	int groupId(int socketId);
+	int groupId(int cpuId);
+
+	int groups();
 
 }

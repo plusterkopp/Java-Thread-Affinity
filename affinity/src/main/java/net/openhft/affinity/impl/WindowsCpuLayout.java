@@ -15,9 +15,20 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 
 	private final List<CpuInfo> cpuDetailsFull;
 
+	final int groups;
+	final int numaNodes;
+
 	WindowsCpuLayout(@NotNull List<CpuInfo> cpuDetails) {
 		super( toVanillaDetails( cpuDetails));
 		cpuDetailsFull = cpuDetails;
+		Set<Integer> groupSet = new HashSet<>();
+		Set<Integer> nodeSet = new HashSet<>();
+		for ( CpuInfo info: cpuDetails) {
+			groupSet.add( info.groupId);
+			nodeSet.add( info.numaId);
+		}
+		groups = groupSet.size();
+		numaNodes = nodeSet.size();
 	}
 
 	static private List<VanillaCpuLayout.CpuInfo> toVanillaDetails( List<CpuInfo> details) {
@@ -170,8 +181,18 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 	}
 
 	@Override
-	public int numaId(int cpuId) {
+	public int groups() {
+		return groups;
+	}
+
+	@Override
+	public int numaNodeId(int cpuId) {
 		return cpuDetailsFull.get( cpuId).numaId;
+	}
+
+	@Override
+	public int numaNodes() {
+		return numaNodes;
 	}
 
 	public int findCpuInfo(int groupId, int lCPUInGroup) {
