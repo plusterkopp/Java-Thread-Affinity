@@ -1,12 +1,28 @@
 package net.openhft.affinity.impl;
 
-import com.sun.jna.platform.win32.*;
-import net.openhft.affinity.*;
-import org.jetbrains.annotations.*;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.Collections;
+import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.function.Consumer;
 
-import java.util.*;
-import java.util.function.*;
-import java.util.stream.*;
+import org.jetbrains.annotations.NotNull;
+
+import com.sun.jna.platform.win32.WinNT;
+
+import net.openhft.affinity.Affinity;
+import net.openhft.affinity.AffinityManager;
+import net.openhft.affinity.AffinityManager.Core;
+import net.openhft.affinity.AffinityManager.Group;
+import net.openhft.affinity.AffinityManager.NumaNode;
+import net.openhft.affinity.AffinityManager.Socket;
+import net.openhft.affinity.GroupedCpuLayout;
+import net.openhft.affinity.ICpuInfo;
+import net.openhft.affinity.IGroupCpuInfo;
+import net.openhft.affinity.INumaCpuInfo;
+import net.openhft.affinity.NumaCpuLayout;
 
 /**
  * Provides another method to define a layout using a simple string.
@@ -16,10 +32,10 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 
 	private final List<WindowsCpuInfo> cpuDetailsFull;
 
-	SortedSet<AffinityManager.Group> groupSet;
-	SortedSet<AffinityManager.NumaNode> nodeSet;
-	SortedSet<AffinityManager.Socket> packageSet;
-	SortedSet<AffinityManager.Core> coreSet;
+	public final List<Group> groups;
+	public final List<NumaNode> nodes;
+	public final List<Socket> packages;
+	public final List<Core> cores;
 
 	static private List<VanillaCpuInfo> toVanillaDetails( List<ICpuInfo> details) {
 		List<VanillaCpuInfo> vanillaDetails = new ArrayList<>( details.size());
@@ -30,7 +46,9 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 		return vanillaDetails;
 	}
 
-	WindowsCpuLayout(@NotNull List<ICpuInfo> cpuDetails, SortedSet<AffinityManager.Group> groups, SortedSet<AffinityManager.NumaNode> nodes, SortedSet<AffinityManager.Socket> packages, SortedSet<AffinityManager.Core> cores) {
+	WindowsCpuLayout(@NotNull List<ICpuInfo> cpuDetails, SortedSet<Group> groupSet, SortedSet<NumaNode> nodeSet,
+			SortedSet<Socket> packageSet, SortedSet<Core> coreSet) {
+		
 		super( toVanillaDetails( cpuDetails));
 		cpuDetailsFull = new ArrayList<>( cpuDetails.size());
 		for ( ICpuInfo info: cpuDetails) {
@@ -38,10 +56,10 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 				cpuDetailsFull.add((WindowsCpuInfo) info);
 			}
 		}
-		groupSet = groups;
-		nodeSet = nodes;
-		packageSet = packages;
-		groupSet = groups;
+		groups = Collections.unmodifiableList( new ArrayList<Group>( groupSet));
+		nodes = Collections.unmodifiableList( new ArrayList<NumaNode>( nodeSet));
+		packages = Collections.unmodifiableList( new ArrayList<Socket>( packageSet));
+		cores = Collections.unmodifiableList( new ArrayList<Core>( coreSet));
 	}
 
 	public static WindowsCpuLayout fromSysInfo(WindowsJNAAffinity.SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX[] sysInfo) {
@@ -226,7 +244,7 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 
 	@Override
 	public int groups() {
-		return groupSet.size();
+		return groups.size();
 	}
 
 	@Override
@@ -236,7 +254,7 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 
 	@Override
 	public int numaNodes() {
-		return nodeSet.size();
+		return nodes.size();
 	}
 
 	public int findCpuInfo(int groupId, int lCPUInGroup) {

@@ -14,37 +14,6 @@ import java.util.function.*;
 public class AffinityManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger(AffinityManager.class);
 
-	final private CpuLayout   cpuLayout;
-
-	AffinityManager INSTANCE = new AffinityManager();
-	private long mask;
-
-	private AffinityManager() {
-		cpuLayout = getLayout();
-		initEntities();
-	}
-
-	private void initEntities() {
-
-	}
-
-	private CpuLayout getLayout() {
-		CpuLayout layout = new NoCpuLayout(Runtime.getRuntime().availableProcessors());
-		IAffinity impl = Affinity.getAffinityImpl();
-		if (impl instanceof IDefaultLayoutAffinity) {
-			IDefaultLayoutAffinity dla = (IDefaultLayoutAffinity) impl;
-			layout = dla.getDefaultLayout();
-		} else {
-			if (new File("/proc/cpuinfo").exists()) {
-				try {
-					layout = VanillaCpuLayout.fromCpuInfo();
-				} catch (Exception e) {
-					LOGGER.warn("Unable to load /proc/cpuinfo", e);
-				}
-			}
-		}
-		return layout;
-	}
 
 	public static class GroupAffinityMask implements Comparable<GroupAffinityMask> {
 	    final int groupId;
@@ -72,7 +41,6 @@ public class AffinityManager {
 			return groupId;
 		}
 	}
-
 
 	abstract static class LayoutEntity implements Comparable<LayoutEntity> {
 		final Set<Thread> threads = new HashSet<>();
@@ -223,4 +191,51 @@ public class AffinityManager {
 	        }
 	    }
 	}
+
+	final private CpuLayout   cpuLayout;
+
+	AffinityManager INSTANCE = new AffinityManager();
+	private long mask;
+
+	private AffinityManager() {
+		cpuLayout = getLayout();
+	}
+
+	private CpuLayout getLayout() {
+		CpuLayout layout = new NoCpuLayout(Runtime.getRuntime().availableProcessors());
+		IAffinity impl = Affinity.getAffinityImpl();
+		if (impl instanceof IDefaultLayoutAffinity) {
+			IDefaultLayoutAffinity dla = (IDefaultLayoutAffinity) impl;
+			layout = dla.getDefaultLayout();
+		} else {
+			if (new File("/proc/cpuinfo").exists()) {
+				try {
+					layout = VanillaCpuLayout.fromCpuInfo();
+				} catch (Exception e) {
+					LOGGER.warn("Unable to load /proc/cpuinfo", e);
+				}
+			}
+		}
+		return layout;
+	}
+
+	/**
+	 * try to bind the current thread to a socket 
+	 * @param socketId
+	 * @return true if the current cpu after the call is one the desired socket, or false
+	 */
+	public boolean bindToSocket( int socketId) {
+		// implement for Windows case first, generalize when interfaces become available for VanillaLayout, too
+		if ( cpuLayout instanceof WindowsCpuLayout) {
+			WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
+			Socket socket = w.packages.get(socketId);
+			socket.bind();
+			int	cpuId = Affinity.getCpu();
+			if ( cpuLayout.socketId(cpuId) == socket.getId()) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 }
