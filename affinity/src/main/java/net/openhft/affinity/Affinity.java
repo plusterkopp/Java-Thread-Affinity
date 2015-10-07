@@ -38,6 +38,12 @@ public enum Affinity {
     private static final IAffinity AFFINITY_IMPL;
     private static Boolean JNAAvailable;
 
+    public static BitSet asBitSet( long mask) {
+        long[] longs = new long[1];
+        longs[0] = mask;
+        return BitSet.valueOf(longs);
+    }
+
     static {
         String osName = System.getProperty("os.name");
         if (osName.contains("Win") && isWindowsJNAAffinityUsable()) {

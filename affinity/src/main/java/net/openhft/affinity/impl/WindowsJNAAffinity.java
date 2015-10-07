@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.*;
  *
  * @author andre.monteiro
  */
-public enum WindowsJNAAffinity implements IAffinity, INumaAffinity, IGroupAffinity, IDefaultLayoutAffinity {
+public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLayoutAffinity {
     INSTANCE {
         @Override
         public CpuLayout getDefaultLayout() {
@@ -43,16 +43,6 @@ public enum WindowsJNAAffinity implements IAffinity, INumaAffinity, IGroupAffini
                 DefaultLayoutAR.compareAndSet( null, l);
             }
             return DefaultLayoutAR.get();
-        }
-
-        @Override
-        public int getNumaGroup() {
-            return 0;
-        }
-
-        @Override
-        public int getCpuGroup() {
-            return 0;
         }
     };
 
@@ -69,12 +59,6 @@ public enum WindowsJNAAffinity implements IAffinity, INumaAffinity, IGroupAffini
             LOGGER.warn("Unable to load jna library", e);
         }
         LOADED = loaded;
-    }
-
-    public static BitSet asBitSet( long mask) {
-        long[] longs = new long[1];
-        longs[0] = mask;
-        return BitSet.valueOf(longs);
     }
 
     /**
@@ -142,7 +126,7 @@ public enum WindowsJNAAffinity implements IAffinity, INumaAffinity, IGroupAffini
             boolean ok = LibKernel32.INSTANCE.GetNumaNodeProcessorMaskEx( i, maskRet);
             if (ok) {
                 long maskRL = maskRet.mask.longValue();
-                BitSet bsMask = asBitSet( maskRL);
+                BitSet bsMask = Affinity.asBitSet(maskRL);
                 result.put( Integer.valueOf( i), bsMask);
             }
         }
@@ -162,7 +146,7 @@ public enum WindowsJNAAffinity implements IAffinity, INumaAffinity, IGroupAffini
             {
                 throw new IllegalStateException("GetProcessAffinityMask(( -1 ), &(" + cpuset1 + "), &(" + cpuset2 + ") ) return " + ret);
             }
-            return asBitSet(cpuset1.getValue());
+            return Affinity.asBitSet(cpuset1.getValue());
         }
         catch (Exception e)
         {
@@ -187,7 +171,7 @@ public enum WindowsJNAAffinity implements IAffinity, INumaAffinity, IGroupAffini
                 throw new IllegalStateException("GetProcessAffinityMask(( -1 ), &(" + procAffResult + "), &(" + systemAffResult + ") ) return " + ret);
             }
 
-            return asBitSet(systemAffResult.getValue());
+            return Affinity.asBitSet(systemAffResult.getValue());
         }
         catch (Exception e)
         {
@@ -220,7 +204,7 @@ public enum WindowsJNAAffinity implements IAffinity, INumaAffinity, IGroupAffini
         }
 
         public String toString() {
-            BitSet maskBS = asBitSet(mask.longValue());
+            BitSet maskBS = Affinity.asBitSet(mask.longValue());
             return "g#" + group.intValue() + "/" + maskBS.toString();
         }
     }
@@ -311,7 +295,7 @@ public enum WindowsJNAAffinity implements IAffinity, INumaAffinity, IGroupAffini
 
         @Override
         public String toString() {
-            return "Active:" + activeProcCount + "/" + maximumProcCount + ", mask: " + asBitSet( activeProessorMask);
+            return "Active:" + activeProcCount + "/" + maximumProcCount + ", mask: " + Affinity.asBitSet(activeProessorMask);
         }
 
     }
@@ -454,24 +438,24 @@ public enum WindowsJNAAffinity implements IAffinity, INumaAffinity, IGroupAffini
             }
         }
 
-        public List<WindowsCpuLayout.Group> asGroups() {
-            List<WindowsCpuLayout.Group> groups = new ArrayList<>();
+        public List<AffinityManager.Group> asGroups() {
+            List<AffinityManager.Group> groups = new ArrayList<>();
             for ( int i = 0;  i < _u.group.activeGroupCount.intValue();  i++) {
                 PROCESSOR_GROUP_INFO groupInfo = _u.group.groupInfos[ i];
-                WindowsCpuLayout.Group g = new WindowsCpuLayout.Group( i, groupInfo.activeProessorMask);
+                AffinityManager.Group g = new AffinityManager.Group( i, groupInfo.activeProessorMask);
                 groups.add( g);
             }
             return groups;
         }
 
-        public WindowsCpuLayout.Package asPackage() {
+        public AffinityManager.Socket asPackage() {
             GROUP_AFFINITY aff = _u.processor.getGroupAffinities()[0];
-            return new WindowsCpuLayout.Package( aff.group.intValue(), aff.mask.longValue());
+            return new AffinityManager.Socket( aff.group.intValue(), aff.mask.longValue());
         }
 
-        public WindowsCpuLayout.NumaNode asNumaNode() {
+        public AffinityManager.NumaNode asNumaNode() {
             GROUP_AFFINITY aff = _u.numaNode.groupMask;
-            return new WindowsCpuLayout.NumaNode( aff.group.intValue(), aff.mask.longValue());
+            return new AffinityManager.NumaNode( aff.group.intValue(), aff.mask.longValue());
         }
 
         @Override
@@ -479,9 +463,9 @@ public enum WindowsJNAAffinity implements IAffinity, INumaAffinity, IGroupAffini
             return Arrays.asList(new String[] { "relationShip", "size", "_u"});
         }
 
-        public WindowsCpuLayout.Core asCore() {
+        public AffinityManager.Core asCore() {
             GROUP_AFFINITY aff = _u.processor.getGroupAffinities()[0];
-            return new WindowsCpuLayout.Core( aff.group.intValue(), aff.mask.longValue());
+            return new AffinityManager.Core( aff.group.intValue(), aff.mask.longValue());
         }
 
         @Override
@@ -625,7 +609,7 @@ public enum WindowsJNAAffinity implements IAffinity, INumaAffinity, IGroupAffini
         try
         {
             long affBefore = lib.SetThreadAffinityMask(pid, aff);
-            return asBitSet(affBefore);
+            return Affinity.asBitSet(affBefore);
         }
         catch (LastErrorException e)
         {

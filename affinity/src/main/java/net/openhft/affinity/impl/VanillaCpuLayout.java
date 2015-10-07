@@ -31,20 +31,20 @@ public class VanillaCpuLayout implements CpuLayout {
     public static final int MAX_CPUS_SUPPORTED = 64;
 
     @NotNull
-    private final List<CpuInfo> cpuDetails;
+    private final List<VanillaCpuInfo> cpuDetails;
     private final int sockets;
     private final int coresPerSocket;
     private final int threadsPerCore;
 
-    VanillaCpuLayout(@NotNull List<CpuInfo> cpuDetails) {
+    VanillaCpuLayout(@NotNull List<VanillaCpuInfo> cpuDetails) {
         this.cpuDetails = cpuDetails;
         SortedSet<Integer> sockets = new TreeSet<Integer>(),
                 cores = new TreeSet<Integer>(),
                 threads = new TreeSet<Integer>();
-        for (CpuInfo cpuDetail : cpuDetails) {
-            sockets.add(cpuDetail.socketId);
-            cores.add((cpuDetail.socketId << 16) + cpuDetail.coreId);
-            threads.add(cpuDetail.threadId);
+        for (VanillaCpuInfo cpuDetail : cpuDetails) {
+            sockets.add(cpuDetail.getSocketId());
+            cores.add((cpuDetail.getSocketId() << 16) + cpuDetail.getCoreId());
+            threads.add(cpuDetail.getThreadId());
         }
         this.sockets = sockets.size();
         this.coresPerSocket = cores.size() / sockets.size();
@@ -55,7 +55,7 @@ public class VanillaCpuLayout implements CpuLayout {
                     .append(" != sockets: ").append(sockets())
                     .append(" * coresPerSocket: ").append(coresPerSocket())
                     .append(" * threadsPerCore: ").append(threadsPerCore()).append('\n');
-            for (CpuInfo detail : cpuDetails) {
+            for (VanillaCpuInfo detail : cpuDetails) {
                 error.append(detail).append('\n');
             }
             throw new AssertionError(error);
@@ -76,12 +76,12 @@ public class VanillaCpuLayout implements CpuLayout {
 
     @NotNull
     public static VanillaCpuLayout fromProperties(@NotNull Properties prop) {
-        List<CpuInfo> cpuDetails = new ArrayList<CpuInfo>();
+        List<VanillaCpuInfo> cpuDetails = new ArrayList<VanillaCpuInfo>();
         for (int i = 0; i < MAX_CPUS_SUPPORTED; i++) {
             String line = prop.getProperty("" + i);
             if (line == null) break;
             String[] word = line.trim().split(" *, *");
-            CpuInfo details = new CpuInfo(parseInt(word[0]),
+            VanillaCpuInfo details = new VanillaCpuInfo(parseInt(word[0]),
                     parseInt(word[1]), parseInt(word[2]));
             cpuDetails.add(details);
         }
@@ -113,29 +113,29 @@ public class VanillaCpuLayout implements CpuLayout {
     public static VanillaCpuLayout fromCpuInfo(InputStream is) throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"));
         String line;
-        List<CpuInfo> cpuDetails = new ArrayList<CpuInfo>();
-        CpuInfo details = new CpuInfo();
+        List<VanillaCpuInfo> cpuDetails = new ArrayList<VanillaCpuInfo>();
+        VanillaCpuInfo details = new VanillaCpuInfo();
         Map<String, Integer> threadCount = new LinkedHashMap<String, Integer>();
 
         while ((line = br.readLine()) != null) {
             if (line.trim().isEmpty()) {
-                String key = details.socketId + "," + details.coreId;
+                String key = details.getSocketId() + "," + details.getCoreId();
                 Integer count = threadCount.get(key);
                 if (count == null)
                     threadCount.put(key, count = 1);
                 else
                     threadCount.put(key, count += 1);
-                details.threadId = count - 1;
+                details.setThreadId(count - 1);
                 cpuDetails.add(details);
-                details = new CpuInfo();
-                details.coreId = cpuDetails.size();
+                details = new VanillaCpuInfo();
+                details.setCoreId(cpuDetails.size());
                 continue;
             }
             String[] words = line.split("\\s*:\\s*", 2);
             if (words[0].equals("physical id"))
-                details.socketId = parseInt(words[1]);
+                details.setSocketId(parseInt(words[1]));
             else if (words[0].equals("core id"))
-                details.coreId = parseInt(words[1]);
+                details.setCoreId(parseInt(words[1]));
         }
         return new VanillaCpuLayout(cpuDetails);
     }
@@ -160,17 +160,17 @@ public class VanillaCpuLayout implements CpuLayout {
 
     @Override
     public int socketId(int cpuId) {
-        return cpuDetails.get(cpuId).socketId;
+        return cpuDetails.get(cpuId).getSocketId();
     }
 
     @Override
     public int coreId(int cpuId) {
-        return cpuDetails.get(cpuId).coreId;
+        return cpuDetails.get(cpuId).getCoreId();
     }
 
     @Override
     public int threadId(int cpuId) {
-        return cpuDetails.get(cpuId).threadId;
+        return cpuDetails.get(cpuId).getThreadId();
     }
 
     @NotNull
@@ -178,7 +178,7 @@ public class VanillaCpuLayout implements CpuLayout {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0, cpuDetailsSize = cpuDetails.size(); i < cpuDetailsSize; i++) {
-            CpuInfo cpuDetail = cpuDetails.get(i);
+            VanillaCpuInfo cpuDetail = cpuDetails.get(i);
             sb.append(i).append(": ").append(cpuDetail).append('\n');
         }
         return sb.toString();
@@ -207,58 +207,4 @@ public class VanillaCpuLayout implements CpuLayout {
         return result;
     }
 
-    static class CpuInfo {
-        /**
-         * count from 0 to # phys sockets
-         */
-        int socketId;
-        /**
-         * count over all phys cores
-         */
-        int coreId;
-        /**
-         * relative to coreId
-         */
-        int threadId;
-
-        CpuInfo() {
-        }
-
-        CpuInfo(int socketId, int coreId, int threadId) {
-            this.socketId = socketId;
-            this.coreId = coreId;
-            this.threadId = threadId;
-        }
-
-        @NotNull
-        @Override
-        public String toString() {
-            return "CpuInfo{" +
-                    "socketId=" + socketId +
-                    ", coreId=" + coreId +
-                    ", threadId=" + threadId +
-                    '}';
-        }
-
-        @Override
-        public boolean equals(@Nullable Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            CpuInfo cpuInfo = (CpuInfo) o;
-
-            if (coreId != cpuInfo.coreId) return false;
-            if (socketId != cpuInfo.socketId) return false;
-            return threadId == cpuInfo.threadId;
-
-        }
-
-        @Override
-        public int hashCode() {
-            int result = socketId;
-            result = 31 * result + coreId;
-            result = 31 * result + threadId;
-            return result;
-        }
-    }
 }

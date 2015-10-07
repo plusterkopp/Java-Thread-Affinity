@@ -18,7 +18,6 @@ package net.openhft.affinity.impl;
 
 import com.sun.jna.platform.win32.*;
 import net.openhft.affinity.*;
-import oracle.jrockit.jfr.events.*;
 import org.junit.*;
 
 import java.util.*;
@@ -112,7 +111,7 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 		}
 		assertEquals("should have " + cpuCount + " cpuInfos, found only " + l.cpus(), cpuCount, l.cpus());
 		for (int i = 0; i < cpuCount; i++) {
-			WindowsCpuLayout.CpuInfo info = l.lCpu(i);
+			WindowsCpuInfo info = l.lCpu(i);
 			System.out.println("cpu " + i + ": " + info);
 		}
 	}
@@ -123,9 +122,9 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 		l.visitCpus(info1 -> {
 			l.visitCpus(info2 -> {
 				if (info1 != info2) {
-					if (info1.groupId == info2.groupId) {
-						BitSet mask1 = WinImpl.asBitSet(info1.mask);
-						BitSet mask2 = WinImpl.asBitSet(info2.mask);
+					if (info1.getGroupId() == info2.getGroupId()) {
+						BitSet mask1 = Affinity.asBitSet(info1.getMask());
+						BitSet mask2 = Affinity.asBitSet(info2.getMask());
 						assertFalse("Masks for " + info1 + " and " + info2 + " must not intersect", mask1.intersects(mask2));
 					}
 				}
@@ -137,7 +136,7 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 	public void testCpuInfoMaskCardinality() {
 		WindowsCpuLayout    l = (WindowsCpuLayout) WinImpl.getDefaultLayout();
 		l.visitCpus( info1 -> {
-			BitSet mask1 = WinImpl.asBitSet(info1.mask);
+			BitSet mask1 = Affinity.asBitSet(info1.getMask());
 			assertEquals("Mask Cardinality for " + info1 + " not " + 1, 1, mask1.cardinality());
 		});
 	}
@@ -146,13 +145,13 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 	public void testCpuInfoSwitch() {
 		WindowsCpuLayout    cpuLayout = (WindowsCpuLayout) WinImpl.getDefaultLayout();
 		int index = WinImpl.getCpu();
-		WindowsCpuLayout.CpuInfo current = cpuLayout.lCpu(index);
+		WindowsCpuInfo current = cpuLayout.lCpu(index);
 		System.out.println( "running on #" + index + ": " + current);
 		cpuLayout.visitCpus(info1 -> {
 			long switched = System.nanoTime();
-			WinImpl.setGroupAffinity(info1.groupId, info1.mask);
+			WinImpl.setGroupAffinity(info1.getGroupId(), info1.getMask());
 			int i = WinImpl.getCpu();
-			WindowsCpuLayout.CpuInfo curr = cpuLayout.lCpu(i);
+			WindowsCpuInfo curr = cpuLayout.lCpu(i);
 			assertEquals("running on " + curr + ", not " + info1, info1, curr);
 			long since = System.nanoTime() - switched;
 			System.out.println("time: " + (since * 1e-3) + " µs, running on " + curr);

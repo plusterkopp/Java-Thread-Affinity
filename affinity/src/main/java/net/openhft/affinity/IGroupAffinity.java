@@ -24,8 +24,5 @@ package net.openhft.affinity;
  */
 public interface IGroupAffinity {
 
-    /**
-     * @return the current cpu group id, or -1 if unknown.
-     */
-    int getCpuGroup();
+    public void setGroupAffinity(int groupId, long mask);
 }
