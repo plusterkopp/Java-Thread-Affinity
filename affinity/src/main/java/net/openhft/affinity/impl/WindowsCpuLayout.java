@@ -48,7 +48,7 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 
 	WindowsCpuLayout(@NotNull List<ICpuInfo> cpuDetails, SortedSet<Group> groupSet, SortedSet<NumaNode> nodeSet,
 			SortedSet<Socket> packageSet, SortedSet<Core> coreSet) {
-		
+
 		super( toVanillaDetails( cpuDetails));
 		cpuDetailsFull = new ArrayList<>( cpuDetails.size());
 		for ( ICpuInfo info: cpuDetails) {
@@ -164,7 +164,7 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 	    }
 
 		// Core ID
-		AffinityManager.Socket[]  socketArr = nodes.toArray( new AffinityManager.Socket[ sockets.size()]);
+		AffinityManager.Socket[]  socketArr = sockets.toArray( new AffinityManager.Socket[ sockets.size()]);
 		id = 0;
 	    for ( AffinityManager.Core c : cores) {
 	        c.setId(id++);

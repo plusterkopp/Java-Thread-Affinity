@@ -13,6 +13,7 @@ import java.util.function.*;
  */
 public class AffinityManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger(AffinityManager.class);
+	public static final AffinityManager INSTANCE = new AffinityManager();
 
 
 	public static class GroupAffinityMask implements Comparable<GroupAffinityMask> {
@@ -94,6 +95,7 @@ public class AffinityManager {
 			synchronized ( threads) {
 				threads.add(t);
 			}
+			INSTANCE.unregister(this, t);
 		}
 
 		/**
@@ -110,8 +112,22 @@ public class AffinityManager {
 					}
 				}
 				threads.clear();
-				threads.addAll( result);
+				threads.addAll(result);
 				return result;
+			}
+		}
+
+		/**
+		 * @return id/group/maskAsBinary
+		 */
+		@Override
+		public String toString() {
+			return "" + getId() + "/" + mask.groupId + "/" + Long.toBinaryString( mask.getMask());
+		}
+
+		public void unregister(Thread t) {
+			synchronized ( threads) {
+				threads.remove(t);
 			}
 		}
 	}
@@ -123,8 +139,8 @@ public class AffinityManager {
 	        super(m);
 	    }
 
-	    public Core(int index, long mask) {
-	        super( index, mask);
+	    public Core(int group, long mask) {
+	        super( group, mask);
 	    }
 
 		public void setSocket(Socket socket) {
@@ -133,6 +149,10 @@ public class AffinityManager {
 
 		public Socket getSocket() {
 			return socket;
+		}
+
+		public String toString() {
+			return "C " + super.toString() + " on " + getSocket();
 		}
 	}
 
@@ -155,6 +175,11 @@ public class AffinityManager {
 		public NumaNode getNode() {
 			return node;
 		}
+
+		public String toString() {
+			return "S " + super.toString() + " on " + getNode();
+		}
+
 	}
 
 	public static class NumaNode extends LayoutEntity {
@@ -166,6 +191,11 @@ public class AffinityManager {
 	    public NumaNode(int index, long mask) {
 	        super( index, mask);
 	    }
+
+		public String toString() {
+			return "N " + super.toString();
+		}
+
 	}
 
 	public static class Group extends LayoutEntity {
@@ -194,7 +224,6 @@ public class AffinityManager {
 
 	final private CpuLayout   cpuLayout;
 
-	AffinityManager INSTANCE = new AffinityManager();
 	private long mask;
 
 	private AffinityManager() {
@@ -220,7 +249,7 @@ public class AffinityManager {
 	}
 
 	/**
-	 * try to bind the current thread to a socket 
+	 * try to bind the current thread to a socket
 	 * @param socketId
 	 * @return true if the current cpu after the call is one the desired socket, or false
 	 */
@@ -237,5 +266,46 @@ public class AffinityManager {
 		}
 		return false;
 	}
-	
+
+	public boolean bindToCore(int coreId) {
+		// implement for Windows case first, generalize when interfaces become available for VanillaLayout, too
+		if ( cpuLayout instanceof WindowsCpuLayout) {
+			WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
+			Core core = w.cores.get(coreId);
+			core.bind();
+			int	cpuId = Affinity.getCpu();
+			if ( cpuLayout.coreId(cpuId) == core.getId()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private void unregister(LayoutEntity current, Thread t) {
+		if ( cpuLayout instanceof WindowsCpuLayout) {
+			WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
+			for ( LayoutEntity g : w.groups) {
+				if ( g != current) {
+					g.unregister(t);
+				}
+			}
+			for ( LayoutEntity n : w.nodes) {
+				if ( n != current) {
+					n.unregister(t);
+				}
+			}
+			for ( LayoutEntity e : w.nodes) {
+				if ( e != current) {
+					e.unregister(t);
+				}
+			}
+			for ( LayoutEntity e : w.nodes) {
+				if ( e != current) {
+					e.unregister( t);
+				}
+			}
+		}
+	}
+
+
 }
