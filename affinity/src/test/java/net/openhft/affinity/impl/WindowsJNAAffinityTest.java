@@ -20,6 +20,7 @@ import com.sun.jna.platform.win32.*;
 import net.openhft.affinity.*;
 import org.junit.*;
 
+import java.text.*;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -54,9 +55,9 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 			return;
 		}
 		// must find at least one group
-		Map<Integer, BitSet> groups = WinImpl.getAffinityGroups();
-		assertTrue("Must have at least one group", groups.size() > 0);
-		System.out.println( "Groups: " + groups);
+		Map<Integer, BitSet> numaNodes = WinImpl.getNumaNodes();
+		assertTrue("Must have at least one node", numaNodes.size() > 0);
+		System.out.println( "Nodes: " + numaNodes);
 	}
 
 	@Test
@@ -104,7 +105,7 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 	@Test
 	public void testCpuInfosCount() {
 		WindowsCpuLayout l = (WindowsCpuLayout) WinImpl.getDefaultLayout();
-		Map<Integer, BitSet> groups = WinImpl.getAffinityGroups();
+		Map<Integer, BitSet> groups = WinImpl.getNumaNodes();
 		int cpuCount = 0;
 		for (BitSet mask : groups.values()) {
 			cpuCount += mask.cardinality();
@@ -146,7 +147,10 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 		WindowsCpuLayout    cpuLayout = (WindowsCpuLayout) WinImpl.getDefaultLayout();
 		int index = WinImpl.getCpu();
 		WindowsCpuInfo current = cpuLayout.lCpu(index);
-		System.out.println( "running on #" + index + ": " + current);
+		System.out.println("running on #" + index + ": " + current);
+		NumberFormat    nf = DecimalFormat.getNumberInstance();
+		nf.setGroupingUsed( true);
+		nf.setMaximumFractionDigits( 3);
 		cpuLayout.visitCpus(info1 -> {
 			long switched = System.nanoTime();
 			WinImpl.setGroupAffinity(info1.getGroupId(), info1.getMask());
@@ -154,7 +158,26 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 			WindowsCpuInfo curr = cpuLayout.lCpu(i);
 			assertEquals("running on " + curr + ", not " + info1, info1, curr);
 			long since = System.nanoTime() - switched;
-			System.out.println("time: " + (since * 1e-3) + " µs, running on " + curr);
+			System.out.println("time: " + nf.format(since * 1e-3) + " µs, running on " + curr);
+		});
+		System.out.flush();
+	}
+
+	@Test
+	public void testNJADirect() {
+		short[] groupA = new short[1];
+		byte[]  cpuA = new byte[1];
+		WindowsJNAAffinity.PROCESSOR_NUMBER.ByReference pNum = new WindowsJNAAffinity.PROCESSOR_NUMBER.ByReference();
+
+		WindowsCpuLayout    cpuLayout = (WindowsCpuLayout) WinImpl.getDefaultLayout();
+		cpuLayout.visitCpus(info1 -> {
+			WinImpl.setGroupAffinity( info1.getGroupId(), info1.getMask());
+			WinImpl.getCurrentCpuInfo(groupA, cpuA);
+			WinImpl.getCurrentProcessorNumber(pNum);
+			System.out.println("direct: " + groupA[0] + "/" + cpuA[0]);
+			System.out.println("struct: " + pNum.group + "/" + pNum.number);
+			Assert.assertEquals("group mismatch", groupA[0], pNum.group.shortValue());
+			Assert.assertEquals("cpuid mismatch", cpuA[0], pNum.number.byteValue());
 		});
 		System.out.flush();
 	}

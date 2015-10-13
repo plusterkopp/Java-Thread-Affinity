@@ -27,12 +27,12 @@ class WindowsCpuInfo extends VanillaCpuInfo implements IGroupCpuInfo, INumaCpuIn
 	@Override
 	public String toString() {
 		return "CpuInfo{" +
-				"socketId=" + getSocketId() +
-				", coreId=" + getCoreId() +
-				", threadId=" + getThreadId() +
-				", numaId=" + numaId +
-				", groupId=" + groupId +
-				", mask=" + Affinity.asBitSet(mask) +
+				" s" + getSocketId() +
+				" c" + getCoreId() +
+				" t" + getThreadId() +
+				" n" + numaId +
+				" g" + groupId +
+				" m" + Affinity.asBitSet(mask) +
 				'}';
 	}
 

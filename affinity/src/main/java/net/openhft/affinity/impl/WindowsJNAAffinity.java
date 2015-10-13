@@ -50,11 +50,14 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
     public static final boolean LOADED;
     private static final Logger LOGGER = LoggerFactory.getLogger(WindowsJNAAffinity.class);
 
+    public static native void getCurrentCpuInfo( short[] groupA, byte[] cpuA);
+
     static {
         boolean loaded = false;
         try {
             INSTANCE.getAffinity();
             loaded = true;
+            Native.register( "affinityInfo");
         } catch (UnsatisfiedLinkError e) {
             LOGGER.warn("Unable to load jna library", e);
         }
@@ -88,100 +91,6 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
     private final ThreadLocal<PROCESSOR_NUMBER.ByReference> ProcNumRef =
             ThreadLocal.withInitial( () -> new PROCESSOR_NUMBER.ByReference());
 
-    public SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX[] getLogicalProcessorInformation() {
-        return getLogicalProcessorInformation(WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationAll);
-    }
-
-    public SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX[] getLogicalProcessorInformation( int relationType) {
-        IntByReference  retCount = new IntByReference();
-        PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX_ARR.ByReference retList = new PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX_ARR.ByReference();
-        LibAffinityInfo.INSTANCE.getSystemRelationShipInfos(retList, retCount);
-        SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX.ByReference[] allResults = retList.toArray(retCount.getValue());
-        List<SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX> filteredList = new ArrayList<>();
-        for (SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX.ByReference result : allResults) {
-            if ( result.relationShip == relationType || relationType == WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationAll) {
-                filteredList.add( result);
-            }
-        }
-        return filteredList.toArray( new SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX[ filteredList.size()]);
-    }
-
-    @Override
-    public BitSet getAffinity() {
-        BitSet  procAff = getProcessAffinity();
-        BitSet  affBefore = setThreadAffinity( procAff);
-        setThreadAffinity( affBefore);
-        return affBefore;
-    }
-
-    public Map<Integer, BitSet>    getAffinityGroups() {
-        long    highestNumaNodeNumber;
-        LongByReference hnnn = new LongByReference( 0);
-        boolean callOK = LibKernel32.INSTANCE.GetNumaHighestNodeNumber( hnnn);
-        highestNumaNodeNumber = hnnn.getValue();
-        Map<Integer, BitSet> result = new HashMap<Integer, BitSet>((int) highestNumaNodeNumber + 1);
-        short groupID = 0;
-        GROUP_AFFINITY.ByReference maskRet = new GROUP_AFFINITY.ByReference();
-        for ( short i = 0;  i <= highestNumaNodeNumber; i++){
-            boolean ok = LibKernel32.INSTANCE.GetNumaNodeProcessorMaskEx( i, maskRet);
-            if (ok) {
-                long maskRL = maskRet.mask.longValue();
-                BitSet bsMask = Affinity.asBitSet(maskRL);
-                result.put( Integer.valueOf( i), bsMask);
-            }
-        }
-        return result;
-    }
-
-    public BitSet getProcessAffinity() {
-        final LibKernel32 lib = LibKernel32.INSTANCE;
-        final LongByReference cpuset1 = new LongByReference(0);
-        final LongByReference cpuset2 = new LongByReference(0);
-        try {
-
-            final int ret = lib.GetProcessAffinityMask(-1, cpuset1, cpuset2);
-            // Successful result is positive, according to the docs
-            // https://msdn.microsoft.com/en-us/library/windows/desktop/ms683213%28v=vs.85%29.aspx
-            if (ret <= 0)
-            {
-                throw new IllegalStateException("GetProcessAffinityMask(( -1 ), &(" + cpuset1 + "), &(" + cpuset2 + ") ) return " + ret);
-            }
-            return Affinity.asBitSet(cpuset1.getValue());
-        }
-        catch (Exception e)
-        {
-            LOGGER.error(e.getMessage(), e);
-            e.printStackTrace();
-        }
-
-        return new BitSet();
-    }
-
-    public BitSet getSystemAffinity() {
-        final LibKernel32 lib = LibKernel32.INSTANCE;
-        final LongByReference procAffResult = new LongByReference(0);
-        final LongByReference systemAffResult = new LongByReference(0);
-        try {
-
-            final int ret = lib.GetProcessAffinityMask(-1, procAffResult, systemAffResult);
-            // Successful result is positive, according to the docs
-            // https://msdn.microsoft.com/en-us/library/windows/desktop/ms683213%28v=vs.85%29.aspx
-            if (ret <= 0)
-            {
-                throw new IllegalStateException("GetProcessAffinityMask(( -1 ), &(" + procAffResult + "), &(" + systemAffResult + ") ) return " + ret);
-            }
-
-            return Affinity.asBitSet(systemAffResult.getValue());
-        }
-        catch (Exception e)
-        {
-            LOGGER.error(e.getMessage(), e);
-            e.printStackTrace();
-        }
-
-        return new BitSet();
-    }
-
     /**
      * @author plusterkopp
      */
@@ -189,6 +98,7 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
         LibAffinityInfo INSTANCE = (LibAffinityInfo) Native.loadLibrary("affinityInfo", LibAffinityInfo.class, W32APIOptions.UNICODE_OPTIONS);
 
         boolean getSystemRelationShipInfos( PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX_ARR.ByReference retList, IntByReference retLength);
+
     }
 
     public static class GROUP_AFFINITY extends Structure {
@@ -554,12 +464,13 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
 
     @Override
     public int getCpu() {
-        PROCESSOR_NUMBER.ByReference procNumRef = ProcNumRef.get();
-        LibKernel32.INSTANCE.GetCurrentProcessorNumberEx(procNumRef);
+        short gr[] = new short[1];
+        byte pr[] = new byte[1];
+        getCurrentCpuInfo( gr, pr);
         CpuLayout    cpuLayout = INSTANCE.getDefaultLayout();
         if ( cpuLayout instanceof WindowsCpuLayout) {
             WindowsCpuLayout    wLayout = (WindowsCpuLayout) cpuLayout;
-            int index = wLayout.findCpuInfo( procNumRef.group.intValue(), procNumRef.number.intValue());
+            int index = wLayout.findCpuInfo( gr[0], pr[0]);
             return index;
         }
         return -1;
@@ -639,6 +550,105 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
         GROUP_AFFINITY.ByReference  garefprev = new GROUP_AFFINITY.ByReference();
         int tid = getTid();
         LibKernel32.INSTANCE.SetThreadGroupAffinity( tid, garef, garefprev);
+    }
+
+    public BitSet getSystemAffinity() {
+        final LibKernel32 lib = LibKernel32.INSTANCE;
+        final LongByReference procAffResult = new LongByReference(0);
+        final LongByReference systemAffResult = new LongByReference(0);
+        try {
+
+            final int ret = lib.GetProcessAffinityMask(-1, procAffResult, systemAffResult);
+            // Successful result is positive, according to the docs
+            // https://msdn.microsoft.com/en-us/library/windows/desktop/ms683213%28v=vs.85%29.aspx
+            if (ret <= 0)
+            {
+                throw new IllegalStateException("GetProcessAffinityMask(( -1 ), &(" + procAffResult + "), &(" + systemAffResult + ") ) return " + ret);
+            }
+
+            return Affinity.asBitSet(systemAffResult.getValue());
+        }
+        catch (Exception e)
+        {
+            LOGGER.error(e.getMessage(), e);
+            e.printStackTrace();
+        }
+
+        return new BitSet();
+    }
+
+    public BitSet getProcessAffinity() {
+        final LibKernel32 lib = LibKernel32.INSTANCE;
+        final LongByReference cpuset1 = new LongByReference(0);
+        final LongByReference cpuset2 = new LongByReference(0);
+        try {
+
+            final int ret = lib.GetProcessAffinityMask(- 1, cpuset1, cpuset2);
+            // Successful result is positive, according to the docs
+            // https://msdn.microsoft.com/en-us/library/windows/desktop/ms683213%28v=vs.85%29.aspx
+            if (ret <= 0)
+            {
+                throw new IllegalStateException("GetProcessAffinityMask(( -1 ), &(" + cpuset1 + "), &(" + cpuset2 + ") ) return " + ret);
+            }
+            return Affinity.asBitSet(cpuset1.getValue());
+        }
+        catch (Exception e)
+        {
+            LOGGER.error(e.getMessage(), e);
+            e.printStackTrace();
+        }
+
+        return new BitSet();
+    }
+
+    public SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX[] getLogicalProcessorInformation() {
+        return getLogicalProcessorInformation(WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationAll);
+    }
+
+    public SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX[] getLogicalProcessorInformation( int relationType) {
+        IntByReference  retCount = new IntByReference();
+        PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX_ARR.ByReference retList = new PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX_ARR.ByReference();
+        LibAffinityInfo.INSTANCE.getSystemRelationShipInfos(retList, retCount);
+        SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX.ByReference[] allResults = retList.toArray(retCount.getValue());
+        List<SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX> filteredList = new ArrayList<>();
+        for (SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX.ByReference result : allResults) {
+            if ( result.relationShip == relationType || relationType == WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationAll) {
+                filteredList.add( result);
+            }
+        }
+        return filteredList.toArray(new SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX[filteredList.size()]);
+    }
+
+    @Override
+    public BitSet getAffinity() {
+        BitSet  procAff = getProcessAffinity();
+        BitSet  affBefore = setThreadAffinity( procAff);
+        setThreadAffinity(affBefore);
+        return affBefore;
+    }
+
+    public Map<Integer, BitSet> getNumaNodes() {
+        long    highestNumaNodeNumber;
+        LongByReference hnnn = new LongByReference( 0);
+        boolean callOK = LibKernel32.INSTANCE.GetNumaHighestNodeNumber( hnnn);
+        highestNumaNodeNumber = hnnn.getValue();
+        Map<Integer, BitSet> result = new HashMap<Integer, BitSet>((int) highestNumaNodeNumber + 1);
+        short groupID = 0;
+        GROUP_AFFINITY.ByReference maskRet = new GROUP_AFFINITY.ByReference();
+        for ( short i = 0;  i <= highestNumaNodeNumber; i++){
+            boolean ok = LibKernel32.INSTANCE.GetNumaNodeProcessorMaskEx( i, maskRet);
+            if (ok) {
+                long maskRL = maskRet.mask.longValue();
+                BitSet bsMask = Affinity.asBitSet(maskRL);
+                result.put( Integer.valueOf( i), bsMask);
+            }
+        }
+        return result;
+    }
+
+    public void getCurrentProcessorNumber(PROCESSOR_NUMBER.ByReference pNum) {
+//        PROCESSOR_NUMBER.ByReference procNumRef = ProcNumRef.get();
+        LibKernel32.INSTANCE.GetCurrentProcessorNumberEx( pNum);
     }
 
 

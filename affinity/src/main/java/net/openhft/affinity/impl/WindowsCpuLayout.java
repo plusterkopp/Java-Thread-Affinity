@@ -124,15 +124,8 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 	    for ( AffinityManager.NumaNode n : nodes) {
 	        n.setId(id++);
 		    final int nodeGroupId = n.getGroupMask().getGroupId();
-	        n.setEntityIds( cpuInfos, pos -> {
+	        n.setEntityIds( cpuInfos, nodeGroupId, pos -> {
 		        final ICpuInfo cpuInfo = cpuInfos.get(pos);
-		        // skip if wrong group
-		        if ( cpuInfo instanceof IGroupCpuInfo) {
-			        IGroupCpuInfo gi = (IGroupCpuInfo) cpuInfo;
-			        if ( gi.getGroupId() != nodeGroupId) {
-				        return;
-			        }
-		        }
 		        if ( cpuInfo instanceof INumaCpuInfo) {
 			        INumaCpuInfo ni = (INumaCpuInfo) cpuInfo;
 			        ni.setNodeId( n.getId());
@@ -142,19 +135,13 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 
 		// Socket ID
 		AffinityManager.NumaNode[]  nodeArr = nodes.toArray( new AffinityManager.NumaNode[ nodes.size()]);
+		System.out.println( "infos: " + cpuInfos);
 	    id = 0;
 	    for ( AffinityManager.Socket s : sockets) {
 	        s.setId(id++);
 		    final int socketGroupId = s.getGroupMask().getGroupId();
-	        s.setEntityIds( cpuInfos, pos -> {
+	        s.setEntityIds( cpuInfos, socketGroupId, pos -> {
 		        final ICpuInfo cpuInfo = cpuInfos.get(pos);
-		        // skip if wrong group
-		        if ( cpuInfo instanceof IGroupCpuInfo) {
-			        IGroupCpuInfo gi = (IGroupCpuInfo) cpuInfo;
-			        if ( gi.getGroupId() != socketGroupId) {
-				        return;
-			        }
-		        }
 		        cpuInfo.setSocketId(s.getId());
 		        if ( cpuInfo instanceof INumaCpuInfo) {
 			        INumaCpuInfo ni = (INumaCpuInfo) cpuInfo;
@@ -169,15 +156,8 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 	    for ( AffinityManager.Core c : cores) {
 	        c.setId(id++);
 		    final int coreGroupId = c.getGroupMask().getGroupId();
-	        c.setEntityIds( cpuInfos, pos -> {
+	        c.setEntityIds( cpuInfos, coreGroupId, pos -> {
 		        final ICpuInfo cpuInfo = cpuInfos.get(pos);
-		        // skip if wrong group
-		        if ( cpuInfo instanceof IGroupCpuInfo) {
-			        IGroupCpuInfo gi = (IGroupCpuInfo) cpuInfo;
-			        if ( gi.getGroupId() != coreGroupId) {
-				        return;
-			        }
-		        }
 		        c.setSocket( socketArr[ cpuInfo.getSocketId()]);
 		        cpuInfo.setCoreId(c.getId());
 	        });

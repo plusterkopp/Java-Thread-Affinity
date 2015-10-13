@@ -57,13 +57,28 @@ public class AffinityManager {
 	    }
 
 		/**
-		 * using the mask, call the consumer with each index in the bitset that is set
+		 * using the mask, call the consumer with each index in the bitset that is set and has matching group (assuming infos with same group ID are consecutive)
 		 * @param cpuInfos
 		 * @param c
 		 */
-	    public void setEntityIds( List<ICpuInfo> cpuInfos, IntConsumer c) {
+	    public void setEntityIds( List<ICpuInfo> cpuInfos, int groupID, IntConsumer c) {
 	        BitSet bs = Affinity.asBitSet(mask.mask);
-	        bs.stream().forEach( c);
+		    // find lowest index in cpuInfos with matching group ID
+		    int index = 0;
+		    for ( index = 0;  index < cpuInfos.size();  index++) {
+			    ICpuInfo info = cpuInfos.get( index);
+			    if ( info instanceof IGroupCpuInfo) {
+				    IGroupCpuInfo   groupInfo = (IGroupCpuInfo) info;
+				    final boolean ok = groupInfo.getGroupId() == groupID;
+				    if ( ok) {
+					    break;
+				    }
+			    } else {    // no groups, assume match
+				    break;
+			    }
+		    }
+		    int startIndex = index;
+	        bs.stream().map( pos -> pos + startIndex).forEach(c);
 	    }
 
 		@Override
@@ -205,20 +220,7 @@ public class AffinityManager {
 	    }
 
 	    public Group(int index, long mask) {
-	        super( index, mask);
-	    }
-
-	    public void setEntityIds(List<ICpuInfo> cpuInfos, IntConsumer c) {
-	        super.setEntityIds( cpuInfos, c);
-	        for ( int i = 0;  i < cpuInfos.size();  i++) {
-	            ICpuInfo info = cpuInfos.get( i);
-		        if ( info instanceof IGroupCpuInfo) {
-			        IGroupCpuInfo gi = (IGroupCpuInfo) info;
-//			        if ( gi.getGroupId() == id) {
-//
-//			        }
-		        }
-	        }
+	        super(index, mask);
 	    }
 	}
 
@@ -257,11 +259,15 @@ public class AffinityManager {
 		// implement for Windows case first, generalize when interfaces become available for VanillaLayout, too
 		if ( cpuLayout instanceof WindowsCpuLayout) {
 			WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
-			Socket socket = w.packages.get(socketId);
-			socket.bind();
-			int	cpuId = Affinity.getCpu();
-			if ( cpuLayout.socketId(cpuId) == socket.getId()) {
-				return true;
+			try {
+				Socket socket = w.packages.get(socketId);
+				socket.bind();
+				int cpuId = Affinity.getCpu();
+				if (cpuLayout.socketId(cpuId) == socket.getId()) {
+					return true;
+				}
+			} catch ( IndexOutOfBoundsException e) {
+				return false;
 			}
 		}
 		return false;
@@ -280,6 +286,22 @@ public class AffinityManager {
 		}
 		return false;
 	}
+
+	public boolean bindToNode(int id) {
+		// implement for Windows case first, generalize when interfaces become available for VanillaLayout, too
+		if ( cpuLayout instanceof WindowsCpuLayout) {
+			WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
+			NumaNode node = w.nodes.get( id);
+			node.bind();
+			int	cpuId = Affinity.getCpu();
+			if ( w.numaNodeId( cpuId) == node.getId()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+
 
 	private void unregister(LayoutEntity current, Thread t) {
 		if ( cpuLayout instanceof WindowsCpuLayout) {

@@ -1,0 +1,14 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="affinity-3.0">
+    <output-path>$PROJECT_DIR$/affinity/target/classes/artifacts/</output-path>
+    <root id="archive" name="affinity-3.0.jar">
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$PROJECT_DIR$/affinity/META-INF/MANIFEST.MF" />
+      </element>
+      <element id="module-output" name="affinity" />
+      <element id="directory" name="win32-x86-64">
+        <element id="file-copy" path="$PROJECT_DIR$/affinity/lib/affinityInfo.dll" />
+      </element>
+    </root>
+  </artifact>
+</component>

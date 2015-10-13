@@ -14,20 +14,10 @@
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.openhft.affinity;
-
-import java.util.*;
+package net.openhft.affinity.osgi;
 
 /**
- * Implementation interface
- *
- * @author plusterkopp
- * @since 2015-09-17
+ * A placeholder to have some plugin works
  */
-public interface INumaAffinity {
-
-    /**
-     * @return the current numa group id, or -1 if unknown.
-     */
-    int getNumaGroup();
+public class OSGiPlaceholder {
 }

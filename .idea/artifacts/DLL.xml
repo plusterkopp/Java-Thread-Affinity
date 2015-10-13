@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact build-on-make="true" name="DLL">
+    <output-path>$PROJECT_DIR$/affinity/target/classes/artifacts/</output-path>
+    <root id="root">
+      <element id="file-copy" path="$PROJECT_DIR$/affinity/lib/affinityInfo.dll" />
+    </root>
+  </artifact>
+</component>
