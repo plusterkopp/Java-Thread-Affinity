@@ -5,6 +5,8 @@ import static org.junit.Assert.*;
 import net.openhft.affinity.impl.*;
 import org.junit.*;
 
+import java.util.*;
+
 public class AffinityManagerTest {
 
 	static private IAffinity   impl = null;
@@ -48,6 +50,34 @@ public class AffinityManagerTest {
 		System.out.println( "not binding to socket " + wrongSocketId);
 		boolean success = AffinityManager.INSTANCE.bindToSocket(wrongSocketId);
 		Assert.assertFalse( "bount to non-existing socket " + wrongSocketId, success);
+
+	}
+
+	@Test
+	public void testUnbind() {
+		// Nodes
+		final AffinityManager am = AffinityManager.INSTANCE;
+		for (AffinityManager.NumaNode  node : layout.nodes) {
+			System.out.println("binding to node " + node);
+			boolean success = am.bindToNode(node);
+			List<AffinityManager.LayoutEntity> boundTo = am.getBoundTo(Thread.currentThread());
+			Assert.assertEquals("too many entities " + boundTo, 1, boundTo.size());
+		}
+		// Sockets
+		for (AffinityManager.Socket socket : layout.packages) {
+			System.out.println( "binding to socket " + socket);
+			boolean success = am.bindToSocket(socket);
+			List<AffinityManager.LayoutEntity> boundTo = am.getBoundTo(Thread.currentThread());
+			Assert.assertEquals("too many entities " + boundTo, 1, boundTo.size());
+		}
+		// Cores
+		for (AffinityManager.Core core: layout.cores) {
+			System.out.println( "binding to core " + core);
+			boolean success = am.bindToCore(core);
+			List<AffinityManager.LayoutEntity> boundTo = am.getBoundTo(Thread.currentThread());
+			Assert.assertEquals("too many entities " + boundTo, 1, boundTo.size());
+		}
+
 
 	}
 

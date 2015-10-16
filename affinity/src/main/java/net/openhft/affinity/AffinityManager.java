@@ -15,7 +15,6 @@ public class AffinityManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger(AffinityManager.class);
 	public static final AffinityManager INSTANCE = new AffinityManager();
 
-
 	public static class GroupAffinityMask implements Comparable<GroupAffinityMask> {
 	    final int groupId;
 	    final long    mask;
@@ -43,7 +42,7 @@ public class AffinityManager {
 		}
 	}
 
-	abstract static class LayoutEntity implements Comparable<LayoutEntity> {
+	public abstract static class LayoutEntity implements Comparable<LayoutEntity> {
 		final Set<Thread> threads = new HashSet<>();
 	    final GroupAffinityMask mask;
 	    private int id;
@@ -110,7 +109,7 @@ public class AffinityManager {
 			synchronized ( threads) {
 				threads.add(t);
 			}
-			INSTANCE.unregister(this, t);
+			INSTANCE.unregisterFromOthers(this, t);
 		}
 
 		/**
@@ -140,11 +139,14 @@ public class AffinityManager {
 			return "" + getId() + "/" + mask.groupId + "/" + Long.toBinaryString( mask.getMask());
 		}
 
-		public void unregister(Thread t) {
+		public abstract String getLocation();
+
+		void unregister(Thread t) {
 			synchronized ( threads) {
 				threads.remove(t);
 			}
 		}
+
 	}
 
 	public static class Core extends LayoutEntity {
@@ -169,6 +171,11 @@ public class AffinityManager {
 		public String toString() {
 			return "C " + super.toString() + " on " + getSocket();
 		}
+
+		public String getLocation() {
+			return getSocket().getLocation() + "/" + getId();
+		}
+
 	}
 
 	public static class Socket extends LayoutEntity {
@@ -195,6 +202,10 @@ public class AffinityManager {
 			return "S " + super.toString() + " on " + getNode();
 		}
 
+		public String getLocation() {
+			return getNode().getLocation() + "/" + getId();
+		}
+
 	}
 
 	public static class NumaNode extends LayoutEntity {
@@ -211,6 +222,11 @@ public class AffinityManager {
 			return "N " + super.toString();
 		}
 
+		public String getLocation() {
+			return mask.groupId + "/" + getId();
+		}
+
+
 	}
 
 	public static class Group extends LayoutEntity {
@@ -222,11 +238,15 @@ public class AffinityManager {
 	    public Group(int index, long mask) {
 	        super(index, mask);
 	    }
+
+		public String getLocation() {
+			return "" + getId();
+		}
+
+
 	}
 
 	final private CpuLayout   cpuLayout;
-
-	private long mask;
 
 	private AffinityManager() {
 		cpuLayout = getLayout();
@@ -261,13 +281,22 @@ public class AffinityManager {
 			WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
 			try {
 				Socket socket = w.packages.get(socketId);
-				socket.bind();
-				int cpuId = Affinity.getCpu();
-				if (cpuLayout.socketId(cpuId) == socket.getId()) {
-					return true;
-				}
+				return bindToSocket( socket);
 			} catch ( IndexOutOfBoundsException e) {
 				return false;
+			}
+		}
+		return false;
+	}
+
+	public boolean bindToSocket( Socket socket) {
+		// implement for Windows case first, generalize when interfaces become available for VanillaLayout, too
+		if ( cpuLayout instanceof WindowsCpuLayout) {
+			WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
+			socket.bind();
+			int cpuId = Affinity.getCpu();
+			if (cpuLayout.socketId(cpuId) == socket.getId()) {
+				return true;
 			}
 		}
 		return false;
@@ -277,7 +306,20 @@ public class AffinityManager {
 		// implement for Windows case first, generalize when interfaces become available for VanillaLayout, too
 		if ( cpuLayout instanceof WindowsCpuLayout) {
 			WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
-			Core core = w.cores.get(coreId);
+			try {
+				Core core = w.cores.get(coreId);
+				return bindToCore(core);
+			} catch ( IndexOutOfBoundsException e) {
+				return false;
+			}
+		}
+		return false;
+	}
+
+	public boolean bindToCore(Core core) {
+		// implement for Windows case first, generalize when interfaces become available for VanillaLayout, too
+		if ( cpuLayout instanceof WindowsCpuLayout) {
+			WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
 			core.bind();
 			int	cpuId = Affinity.getCpu();
 			if ( cpuLayout.coreId(cpuId) == core.getId()) {
@@ -291,43 +333,93 @@ public class AffinityManager {
 		// implement for Windows case first, generalize when interfaces become available for VanillaLayout, too
 		if ( cpuLayout instanceof WindowsCpuLayout) {
 			WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
-			NumaNode node = w.nodes.get( id);
+			try {
+				NumaNode node = w.nodes.get( id);
+				return bindToNode(node);
+			} catch ( IndexOutOfBoundsException e) {
+				return false;
+			}
+		}
+		return false;
+	}
+
+	public boolean bindToNode(NumaNode node) {
+		// implement for Windows case first, generalize when interfaces become available for VanillaLayout, too
+		if ( cpuLayout instanceof WindowsCpuLayout) {
+			WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
 			node.bind();
 			int	cpuId = Affinity.getCpu();
-			if ( w.numaNodeId( cpuId) == node.getId()) {
+			if ( w.numaNodeId(cpuId) == node.getId()) {
 				return true;
 			}
 		}
 		return false;
 	}
 
-
-
-	private void unregister(LayoutEntity current, Thread t) {
+	private void visitEntities( Consumer<LayoutEntity> visitor) {
 		if ( cpuLayout instanceof WindowsCpuLayout) {
 			WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
-			for ( LayoutEntity g : w.groups) {
-				if ( g != current) {
-					g.unregister(t);
-				}
-			}
-			for ( LayoutEntity n : w.nodes) {
-				if ( n != current) {
-					n.unregister(t);
-				}
-			}
-			for ( LayoutEntity e : w.nodes) {
+			w.nodes.forEach( visitor);
+			w.packages.forEach( visitor);
+			w.cores.forEach( visitor);
+		}
+	}
+
+	private void unregisterFromOthers(LayoutEntity current, Thread t) {
+		if ( cpuLayout instanceof WindowsCpuLayout) {
+			WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
+			visitEntities( e -> {
 				if ( e != current) {
 					e.unregister(t);
 				}
-			}
-			for ( LayoutEntity e : w.nodes) {
-				if ( e != current) {
-					e.unregister( t);
-				}
-			}
+			});
 		}
 	}
+
+	public int getNumSockets() {
+		return cpuLayout.sockets();
+	}
+
+	public Socket getSocket( int i) {
+		if ( cpuLayout instanceof WindowsCpuLayout) {
+			WindowsCpuLayout wcpul = (WindowsCpuLayout) cpuLayout;
+			return wcpul.packages.get( i);
+		}
+		return null;
+	}
+
+	public Core getCore( int i) {
+		if ( cpuLayout instanceof WindowsCpuLayout) {
+			WindowsCpuLayout wcpul = (WindowsCpuLayout) cpuLayout;
+			return wcpul.cores.get( i);
+		}
+		return null;
+	}
+
+	public NumaNode getNode( int i) {
+		if ( cpuLayout instanceof WindowsCpuLayout) {
+			WindowsCpuLayout wcpul = (WindowsCpuLayout) cpuLayout;
+			return wcpul.nodes.get( i);
+		}
+		return null;
+	}
+
+	public List<LayoutEntity> getBoundTo(Thread thread) {
+		if ( cpuLayout instanceof WindowsCpuLayout) {
+			WindowsCpuLayout wcpul = (WindowsCpuLayout) cpuLayout;
+			List<LayoutEntity> result = new ArrayList<>(1);
+			Consumer<LayoutEntity> addIfHasThread = ( entity) -> {
+				if ( entity.getThreads().contains( thread)) {
+					result.add( entity);
+				}
+			};
+			visitEntities(addIfHasThread);
+			return result;
+		}
+		return Collections.EMPTY_LIST;
+
+	}
+
 
 
 }
