@@ -329,6 +329,33 @@ public class AffinityManager {
 		return false;
 	}
 
+	public boolean bindToGroup(int id) {
+		// implement for Windows case first, generalize when interfaces become available for VanillaLayout, too
+		if ( cpuLayout instanceof WindowsCpuLayout) {
+			WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
+			try {
+				Group entity = w.groups.get( id);
+				return bindToGroup(entity);
+			} catch ( IndexOutOfBoundsException e) {
+				return false;
+			}
+		}
+		return false;
+	}
+
+	public boolean bindToGroup(Group entity) {
+		// implement for Windows case first, generalize when interfaces become available for VanillaLayout, too
+		if ( cpuLayout instanceof WindowsCpuLayout) {
+			WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
+			entity.bind();
+			int	cpuId = Affinity.getCpu();
+			if ( w.groupId(cpuId) == entity.getId()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public boolean bindToNode(int id) {
 		// implement for Windows case first, generalize when interfaces become available for VanillaLayout, too
 		if ( cpuLayout instanceof WindowsCpuLayout) {
@@ -356,9 +383,10 @@ public class AffinityManager {
 		return false;
 	}
 
-	private void visitEntities( Consumer<LayoutEntity> visitor) {
+	public void visitEntities( Consumer<LayoutEntity> visitor) {
 		if ( cpuLayout instanceof WindowsCpuLayout) {
 			WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
+			w.groups.forEach( visitor);
 			w.nodes.forEach( visitor);
 			w.packages.forEach( visitor);
 			w.cores.forEach( visitor);

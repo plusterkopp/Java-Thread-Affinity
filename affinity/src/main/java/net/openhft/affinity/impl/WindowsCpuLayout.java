@@ -135,7 +135,7 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 
 		// Socket ID
 		AffinityManager.NumaNode[]  nodeArr = nodes.toArray( new AffinityManager.NumaNode[ nodes.size()]);
-		System.out.println( "infos: " + cpuInfos);
+//		System.out.println( "infos: " + cpuInfos);
 	    id = 0;
 	    for ( AffinityManager.Socket s : sockets) {
 	        s.setId(id++);

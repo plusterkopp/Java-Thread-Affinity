@@ -57,6 +57,12 @@ public class AffinityManagerTest {
 	public void testUnbind() {
 		// Nodes
 		final AffinityManager am = AffinityManager.INSTANCE;
+		for (AffinityManager.Group  group : layout.groups) {
+			System.out.println("binding to group " + group);
+			boolean success = am.bindToGroup( group);
+			List<AffinityManager.LayoutEntity> boundTo = am.getBoundTo(Thread.currentThread());
+			Assert.assertEquals("too many entities " + boundTo, 1, boundTo.size());
+		}
 		for (AffinityManager.NumaNode  node : layout.nodes) {
 			System.out.println("binding to node " + node);
 			boolean success = am.bindToNode(node);

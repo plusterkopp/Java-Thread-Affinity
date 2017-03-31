@@ -164,7 +164,7 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 	}
 
 	@Test
-	public void testNJADirect() {
+	public void testJNADirect() {
 		short[] groupA = new short[1];
 		byte[]  cpuA = new byte[1];
 		WindowsJNAAffinity.PROCESSOR_NUMBER.ByReference pNum = new WindowsJNAAffinity.PROCESSOR_NUMBER.ByReference();
