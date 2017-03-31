@@ -56,7 +56,7 @@ public abstract class AbstractAffinityImplTest {
         );
         final long allCoresMask = (1L << CORES) - 1;
         assertTrue(
-                "Affinity mask " + Utilities.toBinaryString(affinity) + " must be <=(2^" + CORES + "-1 = " + allCoresMask + ")",
+                "Affinity mask " + Utilities.toBinaryString(affinity) + " must fit in " + Utilities.toBinaryString( CORES_MASK),
                         affinity.length() <= CORES_MASK.length()
                 );
     }

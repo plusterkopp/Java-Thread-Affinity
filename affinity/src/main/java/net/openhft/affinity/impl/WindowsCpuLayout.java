@@ -1,28 +1,13 @@
 package net.openhft.affinity.impl;
 
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.Collections;
-import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.function.Consumer;
 
+import net.openhft.affinity.*;
+import net.openhft.affinity.impl.LayoutEntities.*;
 import org.jetbrains.annotations.NotNull;
 
 import com.sun.jna.platform.win32.WinNT;
-
-import net.openhft.affinity.Affinity;
-import net.openhft.affinity.AffinityManager;
-import net.openhft.affinity.AffinityManager.Core;
-import net.openhft.affinity.AffinityManager.Group;
-import net.openhft.affinity.AffinityManager.NumaNode;
-import net.openhft.affinity.AffinityManager.Socket;
-import net.openhft.affinity.GroupedCpuLayout;
-import net.openhft.affinity.ICpuInfo;
-import net.openhft.affinity.IGroupCpuInfo;
-import net.openhft.affinity.INumaCpuInfo;
-import net.openhft.affinity.NumaCpuLayout;
 
 /**
  * Provides another method to define a layout using a simple string.
@@ -31,11 +16,8 @@ import net.openhft.affinity.NumaCpuLayout;
 public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout, GroupedCpuLayout {
 
 	private final List<WindowsCpuInfo> cpuDetailsFull;
-
 	public final List<Group> groups;
-	public final List<NumaNode> nodes;
-	public final List<Socket> packages;
-	public final List<Core> cores;
+	public List<NumaNode> nodes;
 
 	static private List<VanillaCpuInfo> toVanillaDetails( List<ICpuInfo> details) {
 		List<VanillaCpuInfo> vanillaDetails = new ArrayList<>( details.size());
@@ -64,18 +46,18 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 
 	public static WindowsCpuLayout fromSysInfo(WindowsJNAAffinity.SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX[] sysInfo) {
 
-		SortedSet<AffinityManager.Group> groups = new TreeSet<>();
-		SortedSet<AffinityManager.NumaNode> nodes = new TreeSet<>();
-		SortedSet<AffinityManager.Socket> packages = new TreeSet<>();
-		SortedSet<AffinityManager.Core> cores = new TreeSet<>();
+		SortedSet<Group> groups = new TreeSet<>();
+		SortedSet<NumaNode> nodes = new TreeSet<>();
+		SortedSet<Socket> packages = new TreeSet<>();
+		SortedSet<Core> cores = new TreeSet<>();
 		List<ICpuInfo> cpuInfos = WindowsCpuLayout.asCpuInfos( sysInfo, groups, nodes, packages, cores);
 		WindowsCpuLayout result = new WindowsCpuLayout(cpuInfos, groups, nodes, packages, cores);
 		return result;
 	}
 
 	static List<ICpuInfo> asCpuInfos(WindowsJNAAffinity.SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX[] lpis,
-	                                 SortedSet<AffinityManager.Group> groups, SortedSet<AffinityManager.NumaNode> nodes,
-	                                 SortedSet<AffinityManager.Socket> sockets, SortedSet<AffinityManager.Core> cores) {
+									 SortedSet<Group> groups, SortedSet<NumaNode> nodes,
+									 SortedSet<Socket> sockets, SortedSet<Core> cores) {
 
 	    // gather LayoutEntities and set their group affinity mask
 	    for ( WindowsJNAAffinity.SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX lpi : lpis) {
@@ -96,7 +78,7 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 	    int id = 0;
 	    int bits = 0;
 		// first, sum the sizes of each group as given in the cardinality of their bit mask
-	    for ( AffinityManager.Group g : groups) {
+	    for ( Group g : groups) {
 	        g.setId( id++);
 	        bits += Long.bitCount( g.getGroupMask().getMask());
 	    }
@@ -106,7 +88,7 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 		// Field GroupID
 		// for each group with size S, set the groupID for the next S cpuInfos
 		int cpuID = 0;
-		for (AffinityManager.Group g : groups) {
+		for (Group g : groups) {
 			BitSet  bs = Affinity.asBitSet( g.getGroupMask().getMask());
 			int[] positions = bs.stream().toArray();
 			for ( int pos : positions) {
@@ -121,7 +103,7 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 
 		// Numa Node ID
 	    id = 0;
-	    for ( AffinityManager.NumaNode n : nodes) {
+	    for ( NumaNode n : nodes) {
 	        n.setId(id++);
 		    final int nodeGroupId = n.getGroupMask().getGroupId();
 	        n.setEntityIds( cpuInfos, nodeGroupId, pos -> {
@@ -134,10 +116,10 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 	    }
 
 		// Socket ID
-		AffinityManager.NumaNode[]  nodeArr = nodes.toArray( new AffinityManager.NumaNode[ nodes.size()]);
+		NumaNode[]  nodeArr = nodes.toArray( new NumaNode[ nodes.size()]);
 //		System.out.println( "infos: " + cpuInfos);
 	    id = 0;
-	    for ( AffinityManager.Socket s : sockets) {
+	    for ( Socket s : sockets) {
 	        s.setId(id++);
 		    final int socketGroupId = s.getGroupMask().getGroupId();
 	        s.setEntityIds( cpuInfos, socketGroupId, pos -> {
@@ -151,9 +133,9 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 	    }
 
 		// Core ID
-		AffinityManager.Socket[]  socketArr = sockets.toArray( new AffinityManager.Socket[ sockets.size()]);
+		Socket[]  socketArr = sockets.toArray( new Socket[ sockets.size()]);
 		id = 0;
-	    for ( AffinityManager.Core c : cores) {
+	    for ( Core c : cores) {
 	        c.setId(id++);
 		    final int coreGroupId = c.getGroupMask().getGroupId();
 	        c.setEntityIds( cpuInfos, coreGroupId, pos -> {
@@ -164,7 +146,7 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 	    }
 
 		// Thread IDs and masks
-		List<AffinityManager.Core> coreList = new ArrayList<>( cores);
+		List<Core> coreList = new ArrayList<>( cores);
 		// set threadIds to be relative to coreId
 		for ( int i = 0;  i < cpuInfos.size();  i++) {
 			ICpuInfo cpuInfo = cpuInfos.get(i);
@@ -181,7 +163,7 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 			if (cpuInfo instanceof WindowsCpuInfo) {
 				WindowsCpuInfo windowsCpuInfo = (WindowsCpuInfo) cpuInfo;
 				// starting from the mask of the corresponding core, retain the set bit at position threadId and clear all others, remember the resulting mask for this cpuInfo
-				AffinityManager.Core c = coreList.get(cpuInfo.getCoreId());
+				Core c = coreList.get(cpuInfo.getCoreId());
 				BitSet coreMask = Affinity.asBitSet(c.getGroupMask().getMask());
 				int setBitCount = 0;
 				int p;
@@ -230,11 +212,6 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 	@Override
 	public int numaNodeId(int cpuId) {
 		return cpuDetailsFull.get(cpuId).getNodeId();
-	}
-
-	@Override
-	public int numaNodes() {
-		return nodes.size();
 	}
 
 	public int findCpuInfo(int groupId, int lCPUInGroup) {

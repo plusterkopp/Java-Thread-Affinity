@@ -16,19 +16,37 @@
 
 package net.openhft.affinity.impl;
 
+import com.sun.jna.NativeLong;
 import com.sun.jna.Platform;
+import net.openhft.affinity.CpuLayout;
 import net.openhft.affinity.IAffinity;
+import net.openhft.affinity.IDefaultLayoutAffinity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.LinkedList;
 
-public enum LinuxJNAAffinity implements IAffinity {
-    INSTANCE;
+public enum LinuxJNAAffinity implements IAffinity, IDefaultLayoutAffinity {
+    INSTANCE {
+    @Override
+        public CpuLayout getDefaultLayout() {
+            if ( DefaultLayoutAR.get() == null) {
+                VanillaCpuLayout l = null;
+                try {
+                    l = VanillaCpuLayout.fromCpuInfo();
+                    DefaultLayoutAR.compareAndSet( null, l);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            return DefaultLayoutAR.get();
+        }
+    };
     private static final Logger LOGGER = LoggerFactory.getLogger(LinuxJNAAffinity.class);
     public static final boolean LOADED;
 
@@ -37,22 +55,37 @@ public enum LinuxJNAAffinity implements IAffinity {
     public BitSet getAffinity() {
         final LinuxHelper.cpu_set_t cpuset = LinuxHelper.sched_getaffinity();
 
+        BitSet ret = new BitSet(LinuxHelper.cpu_set_t.__CPU_SETSIZE);
+        int i = 0;
+        for (NativeLong nl : cpuset.__bits) {
+            for (int j = 0; j < Long.SIZE; j++)
+                ret.set(i++, ((nl.longValue() >>> j) & 1) != 0);
+        }
+        return ret;
+    }
+
+
+    public BitSet getAffinityOld() {
+        final LinuxHelper.cpu_set_t cpuset = LinuxHelper.sched_getaffinity();
+
         boolean collect = false;
         ArrayList<Byte> bytes = new ArrayList<Byte>();
 
         ByteBuffer buff = null;
         if (Platform.is64Bit())
         {
-            buff = ByteBuffer.allocate(Long.SIZE / 8);
+            buff = ByteBuffer.allocate( 2 * Long.SIZE / 8); // reicht für 128 CPUs
         }
         else
         {
             buff = ByteBuffer.allocate(Integer.SIZE / 8);
         }
 
-        for (int i = cpuset.__bits.length - 1; i >= 0; --i)
+        final NativeLong[] bits = cpuset.__bits;
+        for (int i = bits.length - 1; i >= 0; --i)
         {
-            if (!collect && cpuset.__bits[i].longValue() != 0)
+            final long longValue = bits[i].longValue();
+            if (!collect && longValue != 0)
             {
                 collect = true;
             }
@@ -61,11 +94,11 @@ public enum LinuxJNAAffinity implements IAffinity {
             {
                 if (Platform.is64Bit())
                 {
-                    buff.putLong(cpuset.__bits[i].longValue());
+                    buff.putLong(longValue);
                 }
                 else
                 {
-                    buff.putInt((int) cpuset.__bits[i].longValue());
+                    buff.putInt((int) longValue);
                 }
 
                 final byte[] arr = buff.array();

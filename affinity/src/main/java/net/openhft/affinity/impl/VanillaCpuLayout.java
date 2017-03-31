@@ -17,6 +17,9 @@
 package net.openhft.affinity.impl;
 
 import net.openhft.affinity.*;
+import net.openhft.affinity.impl.LayoutEntities.Core;
+import net.openhft.affinity.impl.LayoutEntities.NumaNode;
+import net.openhft.affinity.impl.LayoutEntities.Socket;
 import org.jetbrains.annotations.*;
 
 import java.io.*;
@@ -27,8 +30,8 @@ import static java.lang.Integer.*;
 /**
  * @author peter.lawrey
  */
-public class VanillaCpuLayout implements CpuLayout {
-    public static final int MAX_CPUS_SUPPORTED = 64;
+public class VanillaCpuLayout implements CpuLayout, NumaCpuLayout {
+    public static final int MAX_lCPUS_SUPPORTED = 64;
 
     @NotNull
     private final List<VanillaCpuInfo> cpuDetails;
@@ -36,19 +39,27 @@ public class VanillaCpuLayout implements CpuLayout {
     private final int coresPerSocket;
     private final int threadsPerCore;
 
+    public List<Socket> packages;
+    public List<Core> cores;
+
+
     VanillaCpuLayout(@NotNull List<VanillaCpuInfo> cpuDetails) {
         this.cpuDetails = cpuDetails;
         SortedSet<Integer> sockets = new TreeSet<Integer>(),
-                cores = new TreeSet<Integer>(),
+                coresSet = new TreeSet<Integer>(),
                 threads = new TreeSet<Integer>();
         for (VanillaCpuInfo cpuDetail : cpuDetails) {
             sockets.add(cpuDetail.getSocketId());
-            cores.add((cpuDetail.getSocketId() << 16) + cpuDetail.getCoreId());
+            coresSet.add((cpuDetail.getSocketId() << 16) + cpuDetail.getCoreId());
             threads.add(cpuDetail.getThreadId());
         }
         this.sockets = sockets.size();
-        this.coresPerSocket = cores.size() / sockets.size();
+        this.coresPerSocket = coresSet.size() / sockets.size();
         this.threadsPerCore = threads.size();
+
+        packages = createSocketsList( cpuDetails);
+        cores = Collections.unmodifiableList( new ArrayList<Core>( coreSet));
+
         if (cpuDetails.size() != sockets() * coresPerSocket() * threadsPerCore()) {
             StringBuilder error = new StringBuilder();
             error.append("cpuDetails.size= ").append(cpuDetails.size())
@@ -60,6 +71,33 @@ public class VanillaCpuLayout implements CpuLayout {
             }
             throw new AssertionError(error);
         }
+    }
+
+    private List<Socket> createSocketsList(List<VanillaCpuInfo> cpuDetails) {
+
+        SortedSet   result = new TreeSet<NumaNode>();
+
+        // gather elements to process
+        Set<Integer> remainingCPUIDs = new HashSet<>();
+        Set<Integer> remainingSockets = new HashSet<>();
+        for ( int   i = 0;  i < cpuDetails.size() - 1;  i++) {
+            remainingCPUIDs.add( i);
+            VanillaCpuInfo  cpuInfo = cpuDetails.get( i);
+            remainingSockets.add( cpuInfo.getSocketId());
+        }
+		// for every socket, set all the bits of corresponding CPUs in the socket mask
+        for ( int socketID: remainingSockets) {
+            BitSet  mask = new BitSet( cpuDetails.size());
+            for ( int i = 0;  i < cpuDetails.size();  i++) {
+                VanillaCpuInfo  cpuInfo = cpuDetails.get( i);
+                if ( cpuInfo.getSocketId() == socketID) {
+                    mask.set( i);
+                }
+            }
+			Socket  socket = new Socket( mask)
+        }
+        return Collections.unmodifiableList( new ArrayList<Socket>( result));
+
     }
 
     @NotNull
@@ -206,5 +244,11 @@ public class VanillaCpuLayout implements CpuLayout {
         result = 31 * result + threadsPerCore;
         return result;
     }
+
+	@Override
+	public int numaNodes() {
+		return nodes.size();
+	}
+
 
 }

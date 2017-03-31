@@ -21,10 +21,13 @@ import com.sun.jna.platform.win32.*;
 import com.sun.jna.ptr.*;
 import com.sun.jna.win32.*;
 import net.openhft.affinity.*;
+import net.openhft.affinity.impl.LayoutEntities.Core;
+import net.openhft.affinity.impl.LayoutEntities.Group;
+import net.openhft.affinity.impl.LayoutEntities.NumaNode;
+import net.openhft.affinity.impl.LayoutEntities.Socket;
 import org.slf4j.*;
 
 import java.util.*;
-import java.util.concurrent.atomic.*;
 
 /**
  * Implementation of {@link net.openhft.affinity.IAffinity} based on JNA call of
@@ -46,7 +49,6 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
         }
     };
 
-    private static final AtomicReference<WindowsCpuLayout> DefaultLayoutAR = new AtomicReference<WindowsCpuLayout>();
     public static final boolean LOADED;
     private static final Logger LOGGER = LoggerFactory.getLogger(WindowsJNAAffinity.class);
 
@@ -348,24 +350,24 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
             }
         }
 
-        public List<AffinityManager.Group> asGroups() {
-            List<AffinityManager.Group> groups = new ArrayList<>();
+        public List<Group> asGroups() {
+            List<Group> groups = new ArrayList<>();
             for ( int i = 0;  i < _u.group.activeGroupCount.intValue();  i++) {
                 PROCESSOR_GROUP_INFO groupInfo = _u.group.groupInfos[ i];
-                AffinityManager.Group g = new AffinityManager.Group( i, groupInfo.activeProessorMask);
+                Group g = new Group( i, groupInfo.activeProessorMask);
                 groups.add( g);
             }
             return groups;
         }
 
-        public AffinityManager.Socket asPackage() {
+        public Socket asPackage() {
             GROUP_AFFINITY aff = _u.processor.getGroupAffinities()[0];
-            return new AffinityManager.Socket( aff.group.intValue(), aff.mask.longValue());
+            return new Socket( aff.group.intValue(), aff.mask.longValue());
         }
 
-        public AffinityManager.NumaNode asNumaNode() {
+        public NumaNode asNumaNode() {
             GROUP_AFFINITY aff = _u.numaNode.groupMask;
-            return new AffinityManager.NumaNode( aff.group.intValue(), aff.mask.longValue());
+            return new NumaNode( aff.group.intValue(), aff.mask.longValue());
         }
 
         @Override
@@ -373,9 +375,9 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
             return Arrays.asList(new String[] { "relationShip", "size", "_u"});
         }
 
-        public AffinityManager.Core asCore() {
+        public Core asCore() {
             GROUP_AFFINITY aff = _u.processor.getGroupAffinities()[0];
-            return new AffinityManager.Core( aff.group.intValue(), aff.mask.longValue());
+            return new Core( aff.group.intValue(), aff.mask.longValue());
         }
 
         @Override
