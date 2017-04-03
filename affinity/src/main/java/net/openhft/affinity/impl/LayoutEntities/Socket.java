@@ -1,5 +1,7 @@
 package net.openhft.affinity.impl.LayoutEntities;
 
+import java.util.BitSet;
+
 /**
  * Created by rhelbing on 31.03.17.
  */
@@ -8,6 +10,10 @@ public class Socket extends LayoutEntity {
 
     protected Socket(GroupAffinityMask m) {
         super(m);
+    }
+
+    public Socket(BitSet bitmask) {
+        super( bitmask);
     }
 
     public Socket(int index, long mask) {

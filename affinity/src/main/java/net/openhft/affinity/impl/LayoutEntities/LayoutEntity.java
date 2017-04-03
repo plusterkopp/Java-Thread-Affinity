@@ -139,7 +139,7 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
 
     public abstract String getLocation();
 
-    void unregister(Thread t) {
+    public void unregister(Thread t) {
         synchronized (threads) {
             threads.remove(t);
         }

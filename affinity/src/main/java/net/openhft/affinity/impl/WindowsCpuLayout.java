@@ -1,13 +1,15 @@
 package net.openhft.affinity.impl;
 
-import java.util.*;
-import java.util.function.Consumer;
-
+import com.sun.jna.platform.win32.WinNT;
 import net.openhft.affinity.*;
-import net.openhft.affinity.impl.LayoutEntities.*;
+import net.openhft.affinity.impl.LayoutEntities.Core;
+import net.openhft.affinity.impl.LayoutEntities.Group;
+import net.openhft.affinity.impl.LayoutEntities.NumaNode;
+import net.openhft.affinity.impl.LayoutEntities.Socket;
 import org.jetbrains.annotations.NotNull;
 
-import com.sun.jna.platform.win32.WinNT;
+import java.util.*;
+import java.util.function.Consumer;
 
 /**
  * Provides another method to define a layout using a simple string.
@@ -242,6 +244,11 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 		for ( WindowsCpuInfo info : cpuDetailsFull) {
 			c.accept( info);
 		}
+	}
+
+	@Override
+	public int numaNodes() {
+		return nodes.size();
 	}
 
 }

@@ -1,11 +1,13 @@
 package net.openhft.affinity;
 
-import static org.junit.Assert.*;
+import net.openhft.affinity.impl.LayoutEntities.*;
+import net.openhft.affinity.impl.WindowsCpuLayout;
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
-import net.openhft.affinity.impl.*;
-import org.junit.*;
-
-import java.util.*;
+import java.util.List;
 
 public class AffinityManagerTest {
 
@@ -28,19 +30,21 @@ public class AffinityManagerTest {
 	@Test
 	public void testEntities() {
 		// Nodes
-		for (AffinityManager.NumaNode  node : layout.nodes) {
-			System.out.println( "binding to node " + node);
-			boolean success = AffinityManager.INSTANCE.bindToNode(node.getId());
-			Assert.assertTrue( "can not bind node " + node.getId(), success);
+		if (layout instanceof NumaCpuLayout) {
+			for (NumaNode node : layout.nodes) {
+				System.out.println( "binding to node " + node);
+				boolean success = AffinityManager.INSTANCE.bindToNode(node.getId());
+				Assert.assertTrue( "can not bind node " + node.getId(), success);
+			}
 		}
 		// Sockets
-		for (AffinityManager.Socket socket : layout.packages) {
+		for (Socket socket : layout.packages) {
 			System.out.println( "binding to socket " + socket);
 			boolean success = AffinityManager.INSTANCE.bindToSocket( socket.getId());
 			Assert.assertTrue( "can not bind socket " + socket.getId(), success);
 		}
 		// Cores
-		for (AffinityManager.Core core: layout.cores) {
+		for (Core core: layout.cores) {
 			System.out.println( "binding to core " + core);
 			boolean success = AffinityManager.INSTANCE.bindToCore(core.getId());
 			Assert.assertTrue( "can not bind core " + core.getId(), success);
@@ -57,30 +61,34 @@ public class AffinityManagerTest {
 	public void testUnbind() {
 		// Nodes
 		final AffinityManager am = AffinityManager.INSTANCE;
-		for (AffinityManager.Group  group : layout.groups) {
-			System.out.println("binding to group " + group);
-			boolean success = am.bindToGroup( group);
-			List<AffinityManager.LayoutEntity> boundTo = am.getBoundTo(Thread.currentThread());
-			Assert.assertEquals("too many entities " + boundTo, 1, boundTo.size());
+		if ( layout instanceof GroupedCpuLayout) {
+			for (Group group : layout.groups) {
+				System.out.println("binding to group " + group);
+				boolean success = am.bindToGroup(group);
+				List<LayoutEntity> boundTo = am.getBoundTo(Thread.currentThread());
+				Assert.assertEquals("too many entities " + boundTo, 1, boundTo.size());
+			}
 		}
-		for (AffinityManager.NumaNode  node : layout.nodes) {
-			System.out.println("binding to node " + node);
-			boolean success = am.bindToNode(node);
-			List<AffinityManager.LayoutEntity> boundTo = am.getBoundTo(Thread.currentThread());
-			Assert.assertEquals("too many entities " + boundTo, 1, boundTo.size());
+		if ( layout instanceof NumaCpuLayout) {
+			for (NumaNode node : layout.nodes) {
+				System.out.println("binding to node " + node);
+				boolean success = am.bindToNode(node);
+				List<LayoutEntity> boundTo = am.getBoundTo(Thread.currentThread());
+				Assert.assertEquals("too many entities " + boundTo, 1, boundTo.size());
+			}
 		}
 		// Sockets
-		for (AffinityManager.Socket socket : layout.packages) {
+		for (Socket socket : layout.packages) {
 			System.out.println( "binding to socket " + socket);
 			boolean success = am.bindToSocket(socket);
-			List<AffinityManager.LayoutEntity> boundTo = am.getBoundTo(Thread.currentThread());
+			List<LayoutEntity> boundTo = am.getBoundTo(Thread.currentThread());
 			Assert.assertEquals("too many entities " + boundTo, 1, boundTo.size());
 		}
 		// Cores
-		for (AffinityManager.Core core: layout.cores) {
+		for (Core core: layout.cores) {
 			System.out.println( "binding to core " + core);
 			boolean success = am.bindToCore(core);
-			List<AffinityManager.LayoutEntity> boundTo = am.getBoundTo(Thread.currentThread());
+			List<LayoutEntity> boundTo = am.getBoundTo(Thread.currentThread());
 			Assert.assertEquals("too many entities " + boundTo, 1, boundTo.size());
 		}
 
