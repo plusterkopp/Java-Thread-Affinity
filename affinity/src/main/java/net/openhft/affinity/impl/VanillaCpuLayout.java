@@ -16,16 +16,13 @@
 
 package net.openhft.affinity.impl;
 
-import net.openhft.affinity.CpuLayout;
-import net.openhft.affinity.ICpuInfo;
-import net.openhft.affinity.impl.LayoutEntities.Core;
-import net.openhft.affinity.impl.LayoutEntities.Socket;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import net.openhft.affinity.*;
+import net.openhft.affinity.impl.LayoutEntities.*;
+import org.jetbrains.annotations.*;
 
 import java.io.*;
 import java.util.*;
-import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static java.lang.Integer.parseInt;
 
@@ -60,7 +57,7 @@ public class VanillaCpuLayout implements CpuLayout {
         this.threadsPerCore = threads.size();
 
         packages = createSocketsList( cpuDetails);
-        cores = createCoreList( cpuDetails); // Collections.unmodifiableList( new ArrayList<Core>( coreSet));
+        cores = createCoreList( cpuDetails, packages); // Collections.unmodifiableList( new ArrayList<Core>( coreSet));
 
         if (cpuDetails.size() != sockets() * coresPerSocket() * threadsPerCore()) {
             StringBuilder error = new StringBuilder();
@@ -79,55 +76,58 @@ public class VanillaCpuLayout implements CpuLayout {
 
         SortedSet   result = new TreeSet<Socket>();
 
-        // gather elements to process
-        Set<Integer> remainingCPUIDs = new HashSet<>();
-        Set<Integer> remainingSockets = new HashSet<>();
-        fillSets( remainingCPUIDs, remainingSockets, cpuDetails, cpuInfo -> cpuInfo.getSocketId());
+        Set<Integer> remainingSockets = cpuDetails.stream()
+		        .map( cpuDetail -> cpuDetail.getSocketId())
+		        .collect(Collectors.toSet());
 		// for every socket, set all the bits of corresponding CPUs in the socket mask
         for ( int socketID: remainingSockets) {
             BitSet  mask = new BitSet( cpuDetails.size());
             for ( int i = 0;  i < cpuDetails.size();  i++) {
                 VanillaCpuInfo  cpuInfo = cpuDetails.get( i);
-                if ( cpuInfo.getSocketId() == socketID) {
-                    mask.set( i);
+	            if ( cpuInfo.getSocketId() == socketID) {
+		            mask.set( i);
                 }
             }
 			Socket  socket = new Socket( mask);
+            socket.setId( socketID);
             result.add( socket);
         }
         return Collections.unmodifiableList( new ArrayList<Socket>( result));
     }
 
-    private List<Core> createCoreList(List<VanillaCpuInfo> cpuDetails) {
+    private List<Core> createCoreList(List<VanillaCpuInfo> cpuDetails, List<Socket> sockets) {
 
         SortedSet   result = new TreeSet<Core>();
 
         // gather elements to process
-        Set<Integer> remainingCPUIDs = new HashSet<>();
-        Set<Integer> remainingCores = new HashSet<>();
-        fillSets( remainingCPUIDs, remainingCores, cpuDetails, cpuInfo -> cpuInfo.getCoreId());
-        // for every socket, set all the bits of corresponding CPUs in the socket mask
-        for ( int coreID: remainingCores) {
+        Set<Core> remainingCores = new HashSet<>();
+	    for ( int i = 0;  i < cpuDetails.size();  i++) {
+		    VanillaCpuInfo  cpuInfo = cpuDetails.get( i);
+		    Core core = new Core((BitSet) null);
+		    core.setId( cpuInfo.getCoreId());
+		    Optional<Socket> socketO = sockets.stream().filter(s -> s.getId() == cpuInfo.getSocketId()).findFirst();
+		    if (! socketO.isPresent()) {
+			    System.err.println( "can not find socket for " + cpuInfo + " in list " + sockets);
+		    }
+		    core.setSocket( socketO.orElse( null));
+			remainingCores.add( core);
+	    }
+        // for every core, set all the bits of corresponding CPUs in the core mask
+        for ( Core remCore: remainingCores) {
             BitSet  mask = new BitSet( cpuDetails.size());
             for ( int i = 0;  i < cpuDetails.size();  i++) {
                 VanillaCpuInfo  cpuInfo = cpuDetails.get( i);
-                if ( cpuInfo.getCoreId() == coreID) {
-                    mask.set( i);
+                if ( cpuInfo.getCoreId() == remCore.getId()
+		                && cpuInfo.getSocketId() == remCore.getSocket().getId()) {
+	                mask.set(i);
                 }
             }
-            Core  core = new Core( mask);
+            Core core = new Core( mask);
+            core.setId( remCore.getId());
+            core.setSocket( remCore.getSocket());
             result.add( core);
         }
         return Collections.unmodifiableList( new ArrayList<Core>( result));
-    }
-
-    private void fillSets(Set<Integer> remainingCPUIDs, Set<Integer> remainingSockets, List<VanillaCpuInfo> cpuDetails, Function<ICpuInfo, Integer> idMapper) {
-        for ( int   i = 0;  i < cpuDetails.size() - 1;  i++) {
-            remainingCPUIDs.add( i);
-            VanillaCpuInfo  cpuInfo = cpuDetails.get( i);
-            int id = idMapper.apply( cpuInfo);
-            remainingSockets.add( id);
-        }
     }
 
     @NotNull
@@ -203,7 +203,9 @@ public class VanillaCpuLayout implements CpuLayout {
             if (words[0].equals("physical id"))
                 details.setSocketId(parseInt(words[1]));
             else if (words[0].equals("core id"))
-                details.setCoreId(parseInt(words[1]));
+	            details.setCoreId(parseInt(words[1]));
+            else if (words[0].equals("apicid"))
+	            details.setApicId(parseInt(words[1]));
         }
         return new VanillaCpuLayout(cpuDetails);
     }
@@ -275,5 +277,7 @@ public class VanillaCpuLayout implements CpuLayout {
         return result;
     }
 
-
+	public ICpuInfo getCPUInfo( int index) {
+    	return cpuDetails.get( index);
+	}
 }

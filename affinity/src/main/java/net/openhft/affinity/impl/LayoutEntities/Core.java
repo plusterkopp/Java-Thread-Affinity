@@ -1,6 +1,8 @@
 package net.openhft.affinity.impl.LayoutEntities;
 
-import java.util.BitSet;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.*;
 
 /**
  * Created by rhelbing on 31.03.17.
@@ -35,5 +37,35 @@ public class Core extends LayoutEntity {
     public String getLocation() {
         return getSocket().getLocation() + "/" + getId();
     }
+
+    public int hashCode() {
+        int socketId = -1;
+        if (socket != null) {
+            socketId = socket.getId();
+        }
+        return 1023 * socketId + getId();
+    }
+
+    @Override
+    public boolean equals(@Nullable Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        Core otherCore = (Core) o;
+        if ( getId() != otherCore.getId()) {
+            return false;
+        }
+        Socket otherSocket = otherCore.getSocket();
+        if ( ! Objects.equals( otherSocket, getSocket())) {
+            return false;
+        }
+        return true;
+
+    }
+
 
 }

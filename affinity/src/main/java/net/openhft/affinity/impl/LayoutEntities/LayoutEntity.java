@@ -74,6 +74,10 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
         return groupAffinityMask;
     }
 
+    public BitSet getBitMask() {
+    	return bitsetMask;
+    }
+
     public int getId() {
         return id;
     }
@@ -123,18 +127,26 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
     @Override
     public String toString() {
 	    if (bitsetMask != null) {
-	    	StringBuilder sb = new StringBuilder( 100);
-	    	long   bits[] = bitsetMask.toLongArray();
-	    	sb.append( getId())
-				    .append( "/");
-		    for (int i = 0; i < bits.length; i++){
-			    sb.append( Long.toBinaryString( bits[ i]))
+	    	StringBuilder sb = new StringBuilder( 300);
+	    	sb.append( "ID: ")
+				    .append( getId())
+				    .append( " M: ");
+		    StringBuilder    bitSB = new StringBuilder( 200);
+		    long   bits[] = bitsetMask.toLongArray();
+		    for (int i = bits.length - 1; i >= 0; i--) {
+			    bitSB.append( Long.toBinaryString( bits[ i]))
 					    .append("/");
 		    }
-		    sb.setLength( sb.length() - 1);
+		    // insert dots for readability
+		    for ( int i = bitSB.length() - 9;  i > 0;  i -= 8) {
+		    	bitSB.insert( i, '.');
+		    }
+		    bitSB.setLength( bitSB.length() - 1);
+		    sb.append( bitSB);
 		    return sb.toString();
 	    }
-	    return "" + getId() + "/" + groupAffinityMask.groupId + "/" + Long.toBinaryString(groupAffinityMask.getMask());
+	    // Windows: using GroupMask instead of BitSet
+	    return "ID: " + getId() + " GM: " + groupAffinityMask.groupId + "/" + Long.toBinaryString(groupAffinityMask.getMask());
     }
 
     public abstract String getLocation();

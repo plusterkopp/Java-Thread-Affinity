@@ -7,8 +7,11 @@ import org.jetbrains.annotations.*;
  */
 class VanillaCpuInfo implements net.openhft.affinity.ICpuInfo {
     private int socketId;
+    /** local to socketId */
     private int coreId;
+	/** local to socketId + coreId */
     private int threadId;
+    private int apicid = -1;    // not set in some use cases
 
     VanillaCpuInfo() {
     }
@@ -19,10 +22,16 @@ class VanillaCpuInfo implements net.openhft.affinity.ICpuInfo {
         this.threadId = threadId;
     }
 
+    VanillaCpuInfo(int socketId, int coreId, int threadId, int apicid) {
+        this( socketId, coreId, threadId);
+        this.apicid = apicid;
+    }
+
     @NotNull
     @Override
     public String toString() {
         return "CpuInfo{" +
+		        ( apicid == -1 ? "" : "apicId=" + apicid + ", ") +
                 "socketId=" + socketId +
                 ", coreId=" + coreId +
                 ", threadId=" + threadId +
@@ -55,6 +64,7 @@ class VanillaCpuInfo implements net.openhft.affinity.ICpuInfo {
         int result = socketId;
         result = 31 * result + coreId;
         result = 31 * result + threadId;
+        result = 31 * result + apicid;
         return result;
     }
 
@@ -86,5 +96,13 @@ class VanillaCpuInfo implements net.openhft.affinity.ICpuInfo {
     @Override
     public void setThreadId(int threadId) {
         this.threadId = threadId;
+    }
+
+    void setApicId(int apicId) {
+        this.apicid = apicId;
+    }
+
+    public int getApicId() {
+    	return apicid;
     }
 }

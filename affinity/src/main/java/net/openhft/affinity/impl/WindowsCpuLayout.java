@@ -212,6 +212,11 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 	}
 
 	@Override
+	public Iterable<? extends Group> getGroups() {
+		return groups;
+	}
+
+	@Override
 	public int numaNodeId(int cpuId) {
 		return cpuDetailsFull.get(cpuId).getNodeId();
 	}
@@ -249,6 +254,11 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 	@Override
 	public int numaNodes() {
 		return nodes.size();
+	}
+
+	@Override
+	public List<? extends NumaNode> getNodes() {
+		return nodes;
 	}
 
 }

@@ -1,12 +1,12 @@
 package net.openhft.affinity;
 
-import net.openhft.affinity.impl.*;
 import net.openhft.affinity.impl.LayoutEntities.*;
+import net.openhft.affinity.impl.*;
 import org.slf4j.*;
 
-import java.io.*;
+import java.io.File;
 import java.util.*;
-import java.util.function.*;
+import java.util.function.Consumer;
 
 
 /**
@@ -46,11 +46,10 @@ public class AffinityManager {
 	 * @return true if the current cpu after the call is one the desired socket, or false
 	 */
 	public boolean bindToSocket( int socketId) {
-		// implement for Windows case first, generalize when interfaces become available for VanillaLayout, too
-		if ( cpuLayout instanceof WindowsCpuLayout) {
-			WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
+		if ( cpuLayout instanceof VanillaCpuLayout) {
+			VanillaCpuLayout v = (VanillaCpuLayout) cpuLayout;
 			try {
-				Socket socket = w.packages.get(socketId);
+				Socket socket = v.packages.get(socketId);
 				return bindToSocket( socket);
 			} catch ( IndexOutOfBoundsException e) {
 				return false;
@@ -60,22 +59,27 @@ public class AffinityManager {
 	}
 
 	public boolean bindToSocket( Socket socket) {
-		// implement for Windows case first, generalize when interfaces become available for VanillaLayout, too
-		if ( cpuLayout instanceof WindowsCpuLayout) {
-			WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
+		if ( cpuLayout instanceof VanillaCpuLayout) {
+			VanillaCpuLayout w = (VanillaCpuLayout) cpuLayout;
 			socket.bind();
 			int cpuId = Affinity.getCpu();
-			if (cpuLayout.socketId(cpuId) == socket.getId()) {
+			final int currentSocketId = cpuLayout.socketId(cpuId);
+			if (currentSocketId == socket.getId()) {
 				return true;
 			}
+			ICpuInfo current = w.getCPUInfo( cpuId);
+			BitSet  desired = (BitSet) socket.getBitMask().clone();
+			Socket currentSocket = w.packages.stream().filter( s -> s.getId() == currentSocketId).findFirst().get();
+			BitSet  ofCurrentSocket = (BitSet) currentSocket.getBitMask().clone();
+			ofCurrentSocket.and( desired);
+			System.err.print( "can not bind: " + socket + ", bound to " + currentSocket + " masks intersect at " + ofCurrentSocket) ;
 		}
 		return false;
 	}
 
 	public boolean bindToCore(int coreId) {
-		// implement for Windows case first, generalize when interfaces become available for VanillaLayout, too
-		if ( cpuLayout instanceof WindowsCpuLayout) {
-			WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
+		if ( cpuLayout instanceof VanillaCpuLayout) {
+			VanillaCpuLayout w = (VanillaCpuLayout) cpuLayout;
 			try {
 				Core core = w.cores.get(coreId);
 				return bindToCore(core);
@@ -87,9 +91,8 @@ public class AffinityManager {
 	}
 
 	public boolean bindToCore(Core core) {
-		// implement for Windows case first, generalize when interfaces become available for VanillaLayout, too
-		if ( cpuLayout instanceof WindowsCpuLayout) {
-			WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
+		if ( cpuLayout instanceof VanillaCpuLayout) {
+			VanillaCpuLayout w = (VanillaCpuLayout) cpuLayout;
 			core.bind();
 			int	cpuId = Affinity.getCpu();
 			if ( cpuLayout.coreId(cpuId) == core.getId()) {
@@ -128,10 +131,10 @@ public class AffinityManager {
 
 	public boolean bindToNode(int id) {
 		// implement for Windows case first, generalize when interfaces become available for VanillaLayout, too
-		if ( cpuLayout instanceof WindowsCpuLayout) {
-			WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
+		if ( cpuLayout instanceof NumaCpuLayout) {
+			NumaCpuLayout w = (NumaCpuLayout) cpuLayout;
 			try {
-				NumaNode node = w.nodes.get( id);
+				NumaNode node = w.getNodes().get( id);
 				return bindToNode(node);
 			} catch ( IndexOutOfBoundsException e) {
 				return false;
@@ -154,18 +157,21 @@ public class AffinityManager {
 	}
 
 	public void visitEntities( Consumer<LayoutEntity> visitor) {
-		if ( cpuLayout instanceof WindowsCpuLayout) {
-			WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
-			w.groups.forEach( visitor);
-			w.nodes.forEach( visitor);
-			w.packages.forEach( visitor);
-			w.cores.forEach( visitor);
+		if ( cpuLayout instanceof VanillaCpuLayout) {
+			VanillaCpuLayout v = (VanillaCpuLayout) cpuLayout;
+			if (cpuLayout instanceof WindowsCpuLayout) {
+				WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
+				w.groups.forEach( visitor);
+				w.nodes.forEach( visitor);
+			}
+			v.packages.forEach( visitor);
+			v.cores.forEach( visitor);
 		}
 	}
 
 	public void unregisterFromOthers(LayoutEntity current, Thread t) {
-		if ( cpuLayout instanceof WindowsCpuLayout) {
-			WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
+		if ( cpuLayout instanceof VanillaCpuLayout) {
+			VanillaCpuLayout w = (VanillaCpuLayout) cpuLayout;
 			visitEntities( e -> {
 				if ( e != current) {
 					e.unregister(t);
@@ -179,32 +185,32 @@ public class AffinityManager {
 	}
 
 	public Socket getSocket(int i) {
-		if ( cpuLayout instanceof WindowsCpuLayout) {
-			WindowsCpuLayout wcpul = (WindowsCpuLayout) cpuLayout;
-			return wcpul.packages.get( i);
+		if ( cpuLayout instanceof VanillaCpuLayout) {
+			VanillaCpuLayout vcpul = (VanillaCpuLayout) cpuLayout;
+			return vcpul.packages.get( i);
 		}
 		return null;
 	}
 
 	public Core getCore(int i) {
-		if ( cpuLayout instanceof WindowsCpuLayout) {
-			WindowsCpuLayout wcpul = (WindowsCpuLayout) cpuLayout;
-			return wcpul.cores.get( i);
+		if ( cpuLayout instanceof VanillaCpuLayout) {
+			VanillaCpuLayout vcpul = (VanillaCpuLayout) cpuLayout;
+			return vcpul.cores.get( i);
 		}
 		return null;
 	}
 
 	public NumaNode getNode(int i) {
-		if ( cpuLayout instanceof WindowsCpuLayout) {
-			WindowsCpuLayout wcpul = (WindowsCpuLayout) cpuLayout;
-			return wcpul.nodes.get( i);
+		if ( cpuLayout instanceof NumaCpuLayout) {
+			NumaCpuLayout nl = (NumaCpuLayout) cpuLayout;
+			return nl.getNodes().get( i);
 		}
 		return null;
 	}
 
 	public List<LayoutEntity> getBoundTo(Thread thread) {
-		if ( cpuLayout instanceof WindowsCpuLayout) {
-			WindowsCpuLayout wcpul = (WindowsCpuLayout) cpuLayout;
+		if ( cpuLayout instanceof VanillaCpuLayout) {
+			VanillaCpuLayout wcpul = (VanillaCpuLayout) cpuLayout;
 			List<LayoutEntity> result = new ArrayList<>(1);
 			Consumer<LayoutEntity> addIfHasThread = (entity) -> {
 				if ( entity.getThreads().contains( thread)) {

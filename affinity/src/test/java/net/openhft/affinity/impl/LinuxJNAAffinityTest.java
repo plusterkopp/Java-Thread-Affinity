@@ -16,18 +16,12 @@
 
 package net.openhft.affinity.impl;
 
-import net.openhft.affinity.Affinity;
-import net.openhft.affinity.AffinitySupport;
-import net.openhft.affinity.CpuLayout;
-import net.openhft.affinity.IAffinity;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import net.openhft.affinity.*;
+import org.junit.*;
 
 import java.util.BitSet;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author peter.lawrey
@@ -49,12 +43,14 @@ public class LinuxJNAAffinityTest extends AbstractAffinityImplTest {
         Assume.assumeTrue( "no LinuxJANAffinity", impl instanceof LinuxJNAAffinity);
         LinuxJNAAffinity    lAff = (LinuxJNAAffinity) impl;
         CpuLayout   layout = lAff.getDefaultLayout();
-        System.out.print( layout);
+        System.out.println( layout);
     }
 
     @Test
     public void getAffinityReturnsValuePreviouslySet() {
         final IAffinity impl = getImpl();
+        final BitSet cmask = impl.getAffinity();
+        System.out.println( "current mask: " + cmask);
         final int cores = CORES;
         for (int core = 0; core < cores; core++) {
             final BitSet mask = new BitSet();

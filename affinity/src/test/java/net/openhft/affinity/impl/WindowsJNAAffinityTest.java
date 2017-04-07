@@ -76,7 +76,7 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 		 testRelationType( "cores", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationProcessorCore);
 		 testRelationType("packages", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationProcessorPackage);
 		 testRelationType( "caches", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationCache);
-		 testRelationType("nodes", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationNumaNode);
+		 testRelationType("getNodes", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationNumaNode);
 		 testRelationType("groups", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationGroup);
 	}
 
