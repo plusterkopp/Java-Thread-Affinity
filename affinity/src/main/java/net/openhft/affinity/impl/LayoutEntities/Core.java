@@ -1,5 +1,6 @@
 package net.openhft.affinity.impl.LayoutEntities;
 
+import net.openhft.affinity.impl.GroupAffinityMask;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;

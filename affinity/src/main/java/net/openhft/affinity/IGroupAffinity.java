@@ -16,6 +16,8 @@
 
 package net.openhft.affinity;
 
+import net.openhft.affinity.impl.GroupAffinityMask;
+
 /**
  * Implementation interface
  *
@@ -24,5 +26,5 @@ package net.openhft.affinity;
  */
 public interface IGroupAffinity {
 
-    public void setGroupAffinity(int groupId, long mask);
+    public GroupAffinityMask setGroupAffinity(int groupId, long mask);
 }

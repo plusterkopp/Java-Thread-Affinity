@@ -2,23 +2,23 @@ package net.openhft.affinity.impl;
 
 import com.sun.jna.platform.win32.WinNT;
 import net.openhft.affinity.*;
-import net.openhft.affinity.impl.LayoutEntities.Core;
-import net.openhft.affinity.impl.LayoutEntities.Group;
-import net.openhft.affinity.impl.LayoutEntities.NumaNode;
-import net.openhft.affinity.impl.LayoutEntities.Socket;
+import net.openhft.affinity.impl.LayoutEntities.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
  * Provides another method to define a layout using a simple string.
  * Created by ralf h on 23.01.2014.
  */
-public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout, GroupedCpuLayout {
+public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout, GroupedCpuLayout, CacheCpuLayout {
 
 	private final List<WindowsCpuInfo> cpuDetailsFull;
 	public final List<Group> groups;
+	private final List<Cache> caches;
 	public List<NumaNode> nodes;
 
 	static private List<VanillaCpuInfo> toVanillaDetails( List<ICpuInfo> details) {
@@ -31,7 +31,7 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 	}
 
 	WindowsCpuLayout(@NotNull List<ICpuInfo> cpuDetails, SortedSet<Group> groupSet, SortedSet<NumaNode> nodeSet,
-			SortedSet<Socket> packageSet, SortedSet<Core> coreSet) {
+			SortedSet<Socket> packageSet, SortedSet<Core> coreSet, SortedSet<Cache> cacheSet) {
 
 		super( toVanillaDetails( cpuDetails));
 		cpuDetailsFull = new ArrayList<>( cpuDetails.size());
@@ -44,6 +44,8 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 		nodes = Collections.unmodifiableList( new ArrayList<NumaNode>( nodeSet));
 		packages = Collections.unmodifiableList( new ArrayList<Socket>( packageSet));
 		cores = Collections.unmodifiableList( new ArrayList<Core>( coreSet));
+		caches = Collections.unmodifiableList( new ArrayList<Cache>( cacheSet));
+		caches.forEach( cache -> cache.setLayout( this));
 	}
 
 	public static WindowsCpuLayout fromSysInfo(WindowsJNAAffinity.SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX[] sysInfo) {
@@ -52,14 +54,15 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 		SortedSet<NumaNode> nodes = new TreeSet<>();
 		SortedSet<Socket> packages = new TreeSet<>();
 		SortedSet<Core> cores = new TreeSet<>();
-		List<ICpuInfo> cpuInfos = WindowsCpuLayout.asCpuInfos( sysInfo, groups, nodes, packages, cores);
-		WindowsCpuLayout result = new WindowsCpuLayout(cpuInfos, groups, nodes, packages, cores);
+		SortedSet<Cache> caches = new TreeSet<>();
+		List<ICpuInfo> cpuInfos = WindowsCpuLayout.asCpuInfos( sysInfo, groups, nodes, packages, cores, caches);
+		WindowsCpuLayout result = new WindowsCpuLayout(cpuInfos, groups, nodes, packages, cores, caches);
 		return result;
 	}
 
 	static List<ICpuInfo> asCpuInfos(WindowsJNAAffinity.SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX[] lpis,
 									 SortedSet<Group> groups, SortedSet<NumaNode> nodes,
-									 SortedSet<Socket> sockets, SortedSet<Core> cores) {
+									 SortedSet<Socket> sockets, SortedSet<Core> cores, SortedSet<Cache> caches) {
 
 	    // gather LayoutEntities and set their group affinity mask
 	    for ( WindowsJNAAffinity.SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX lpi : lpis) {
@@ -70,9 +73,11 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 	                sockets.add(lpi.asPackage()); break;
 	            case WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationNumaNode:
 	                nodes.add(lpi.asNumaNode()); break;
-	            case WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationProcessorCore:
-	                cores.add(lpi.asCore()); break;
-	            default:    // ignore Caches
+				case WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationProcessorCore:
+					cores.add(lpi.asCore()); break;
+				case WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationCache:
+					caches.add(lpi.asCache()); break;
+	            default:    // no longer ignore Caches
 	        }
 	    }
 
@@ -91,7 +96,7 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 		// for each group with size S, set the groupID for the next S cpuInfos
 		int cpuID = 0;
 		for (Group g : groups) {
-			BitSet  bs = Affinity.asBitSet( g.getGroupMask().getMask());
+			BitSet  bs = WindowsJNAAffinity.asBitSet( g.getGroupMask().getMask());
 			int[] positions = bs.stream().toArray();
 			for ( int pos : positions) {
 				final ICpuInfo cpuInfo = cpuInfos.get( cpuID);
@@ -166,7 +171,7 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 				WindowsCpuInfo windowsCpuInfo = (WindowsCpuInfo) cpuInfo;
 				// starting from the mask of the corresponding core, retain the set bit at position threadId and clear all others, remember the resulting mask for this cpuInfo
 				Core c = coreList.get(cpuInfo.getCoreId());
-				BitSet coreMask = Affinity.asBitSet(c.getGroupMask().getMask());
+				BitSet coreMask = WindowsJNAAffinity.asBitSet(c.getGroupMask().getMask());
 				int setBitCount = 0;
 				int p;
 				for (p = coreMask.nextSetBit(0); p >= 0; p = coreMask.nextSetBit(p + 1)) {
@@ -261,4 +266,122 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 		return nodes;
 	}
 
+	@Override
+	public long mask(int cpuId) {
+		WindowsCpuInfo cpuInfo = lCpu(cpuId);
+		return cpuInfo.getMask();
+	}
+
+	Stream<Cache> cachesIntersecting(int cpuId) {
+		WindowsCpuInfo cpuInfo = (WindowsCpuInfo) lCpu( cpuId);
+		return caches.stream().
+				filter( cache -> cache.intersects( cpuInfo.getGroupId(), cpuInfo.getMask()));
+	}
+
+	/**
+	 * we only want one hit, therefore ignore Instruction Cache
+	 * @param cpuId
+	 * @param level
+	 * @param getter
+	 * @return usually some sort of size
+	 */
+	private long getCacheInfo(int cpuId, int level, Function<Cache, Long> getter) {
+		long[] retValA = { -1};
+		cachesIntersecting(cpuId)
+				.filter(cache -> cache.getLevel() == level)
+				.filter(cache -> cache.getType() != CacheType.INSTRUCTION)
+				.findFirst()
+				.ifPresent( cache -> retValA[ 0] = getter.apply( cache));
+		return retValA[ 0];
+	}
+
+	private byte getCacheInfoB(int cpuId, int level, Function<Cache, Byte> getter) {
+		byte[] retValA = { -1};
+		cachesIntersecting(cpuId)
+				.filter(cache -> cache.getLevel() == level)
+				.findFirst()
+				.ifPresent( cache -> retValA[ 0] = getter.apply( cache));
+		return retValA[ 0];
+	}
+
+	private CacheCpuLayout.CacheType getCacheInfoCT(int cpuId, int level, Function<Cache, CacheCpuLayout.CacheType> getter) {
+		CacheCpuLayout.CacheType[] retValA = new CacheType[ 1];
+		cachesIntersecting(cpuId)
+				.filter(cache -> cache.getLevel() == level)
+				.findFirst()
+				.ifPresent( cache -> retValA[ 0] = getter.apply( cache));
+		return retValA[ 0];
+	}
+
+	@Override
+	public Cache getCache(int cpuId, int level) {
+		return cachesIntersecting(cpuId)
+				.filter(cache -> cache.getLevel() == level)
+				.findFirst()
+				.orElse( null);
+	}
+
+	@Override
+	public long l1CacheSize(int cpuId) {
+		return getCacheInfo( cpuId, 1, Cache::getSize);
+	}
+
+	@Override
+	public long l2CacheSize(int cpuId) {
+		return getCacheInfo( cpuId, 2, Cache::getSize);
+	}
+
+	@Override
+	public long l3CacheSize(int cpuId) {
+		return getCacheInfo( cpuId, 3, Cache::getSize);
+	}
+
+	@Override
+	public long l1CacheLineSize(int cpuId) {
+		return getCacheInfo( cpuId, 1, Cache::getLineSize);
+	}
+
+	@Override
+	public long l2CacheLineSize(int cpuId) {
+		return getCacheInfo( cpuId, 2, Cache::getLineSize);
+	}
+
+	@Override
+	public long l3CacheLineSize(int cpuId) {
+		return getCacheInfo( cpuId, 3, Cache::getLineSize);
+	}
+
+	@Override
+	public byte l1Associativity(int cpuId) {
+		return getCacheInfoB( cpuId, 1, Cache::getAssociativity);
+	}
+
+	@Override
+	public byte l2Associativity(int cpuId) {
+		return getCacheInfoB( cpuId, 2, Cache::getAssociativity);
+	}
+
+	@Override
+	public byte l3Associativity(int cpuId) {
+		return getCacheInfoB( cpuId, 3, Cache::getAssociativity);
+	}
+
+	@Override
+	public CacheType l1Type(int cpuId) {
+		return getCacheInfoCT( cpuId, 1, Cache::getType);
+	}
+
+	@Override
+	public CacheType l2Type(int cpuId) {
+		return getCacheInfoCT( cpuId, 2, Cache::getType);
+	}
+
+	@Override
+	public CacheType l3Type(int cpuId) {
+		return getCacheInfoCT( cpuId, 3, Cache::getType);
+	}
+
+	public List<Cache> getCaches() {
+		return caches;
+	}
 }

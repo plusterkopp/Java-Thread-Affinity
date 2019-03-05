@@ -1,6 +1,4 @@
-package net.openhft.affinity.impl.LayoutEntities;
-
-import net.openhft.affinity.impl.WindowsCpuLayout;
+package net.openhft.affinity.impl;
 
 /**
  * used for Windows API
@@ -11,7 +9,7 @@ public class GroupAffinityMask implements Comparable<GroupAffinityMask> {
     final int groupId;
     final long mask;
 
-    GroupAffinityMask(int groupId, long mask) {
+    public GroupAffinityMask(int groupId, long mask) {
         this.groupId = groupId;
         this.mask = mask;
     }
@@ -31,5 +29,9 @@ public class GroupAffinityMask implements Comparable<GroupAffinityMask> {
 
     public int getGroupId() {
         return groupId;
+    }
+
+    public String toString() {
+        return groupId + "/0x" + Long.toHexString( mask);
     }
 }

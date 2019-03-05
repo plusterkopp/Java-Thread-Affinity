@@ -1,5 +1,7 @@
 package net.openhft.affinity.impl.LayoutEntities;
 
+import net.openhft.affinity.impl.GroupAffinityMask;
+
 /**
  * Created by rhelbing on 31.03.17.
  */

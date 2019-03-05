@@ -141,6 +141,7 @@ public class VanillaCpuLayoutTest {
         VanillaCpuLayout    vanilla = (VanillaCpuLayout) cpuLayout;
         for( Core core : vanilla.cores) {
         	BitSet  coreMask = core.getBitMask();
+        	Assume.assumeTrue( "not running if no bitmask (group layout?", coreMask != null);
             BitSet  intersection = (BitSet) core.getBitMask().clone();
             Socket socket = core.getSocket();
             Assume.assumeTrue( "core " + core + " must have socket", socket != null);

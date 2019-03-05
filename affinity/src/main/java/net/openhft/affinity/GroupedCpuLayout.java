@@ -12,5 +12,7 @@ public interface GroupedCpuLayout {
 
 	int groups();
 
+	long mask( int cpuId);
+
 	Iterable<? extends Group> getGroups();
 }

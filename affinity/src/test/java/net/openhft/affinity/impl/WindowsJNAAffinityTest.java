@@ -18,6 +18,7 @@ package net.openhft.affinity.impl;
 
 import com.sun.jna.platform.win32.*;
 import net.openhft.affinity.*;
+import net.openhft.affinity.impl.LayoutEntities.Cache;
 import org.junit.*;
 
 import java.text.*;
@@ -124,8 +125,8 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 			l.visitCpus(info2 -> {
 				if (info1 != info2) {
 					if (info1.getGroupId() == info2.getGroupId()) {
-						BitSet mask1 = Affinity.asBitSet(info1.getMask());
-						BitSet mask2 = Affinity.asBitSet(info2.getMask());
+						BitSet mask1 = WindowsJNAAffinity.asBitSet(info1.getMask());
+						BitSet mask2 = WindowsJNAAffinity.asBitSet(info2.getMask());
 						assertFalse("Masks for " + info1 + " and " + info2 + " must not intersect", mask1.intersects(mask2));
 					}
 				}
@@ -137,7 +138,7 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 	public void testCpuInfoMaskCardinality() {
 		WindowsCpuLayout    l = (WindowsCpuLayout) WinImpl.getDefaultLayout();
 		l.visitCpus( info1 -> {
-			BitSet mask1 = Affinity.asBitSet(info1.getMask());
+			BitSet mask1 = WindowsJNAAffinity.asBitSet(info1.getMask());
 			assertEquals("Mask Cardinality for " + info1 + " not " + 1, 1, mask1.cardinality());
 		});
 	}
@@ -180,6 +181,81 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 			Assert.assertEquals("cpuid mismatch", cpuA[0], pNum.number.byteValue());
 		});
 		System.out.flush();
+	}
+
+	@Test
+	public void basicSetAffinity() {
+		WindowsCpuLayout    cpuLayout = (WindowsCpuLayout) WinImpl.getDefaultLayout();
+		int nCPUs = cpuLayout.cpus();
+		Assume.assumeTrue( nCPUs <= 64);
+		for ( int cpu = 0;  cpu < nCPUs;  cpu++) {
+			BitSet affinity = new BitSet( nCPUs);
+			affinity.set(cpu);
+			WinImpl.setAffinity( affinity);
+			BitSet affNow = WinImpl.getAffinity();
+			System.out.println( "cpu: " + cpu + " mask: " + affinity + " → " + affNow);
+			Assert.assertEquals( "affinity not set", affinity, affNow);
+		}
+	}
+
+	@Test
+	public void basicSetAffinityG() {
+		WindowsCpuLayout    cpuLayout = (WindowsCpuLayout) WinImpl.getDefaultLayout();
+		int nCPUs = cpuLayout.cpus();
+		for ( int cpu = 0;  cpu < nCPUs;  cpu++) {
+			WindowsCpuInfo info = (WindowsCpuInfo) cpuLayout.lCpu( cpu);
+			GroupAffinityMask newGAM = new GroupAffinityMask( info.getGroupId(), info.getMask());
+			try {
+				GroupAffinityMask previousGAM = WinImpl.setGroupAffinity(info.getGroupId(), info.getMask());
+				System.out.println( "cpu: " + cpu + " gam: " + newGAM);
+			} catch ( IllegalStateException ise) {
+				Assert.fail( "group affinity not set to gam: " + newGAM);
+			}
+		}
+	}
+
+	@Test
+	public void listCaches() {
+		WindowsCpuLayout    cpuLayout = (WindowsCpuLayout) WinImpl.getDefaultLayout();
+		int nCPUs = cpuLayout.cpus();
+		for ( int cpu = 0;  cpu < nCPUs;  cpu++) {
+			WindowsCpuInfo info = (WindowsCpuInfo) cpuLayout.lCpu( cpu);
+			Cache	l1 = cpuLayout.getCache( cpu, 1);
+			Cache	l2 = cpuLayout.getCache( cpu, 2);
+			Cache	l3 = cpuLayout.getCache( cpu, 3);
+			System.out.print( "cpu: " + info);
+			if ( l1 != null) {
+				System.out.print( " L1: " + ( l1.getSize() >> 10) + " kB, "
+						+ "line " + l1.getLineSize() + " B, "
+						+ "assoc " + ( l1.getAssociativity() < 255
+						? ( l1.getAssociativity() + "x")
+						: "full") + ", "
+						+ "type " + l1.getType()
+						+ " on cores " + Arrays.toString( l1.getCores())
+						+ ",   ");
+			}
+			if ( l2 != null) {
+				System.out.print( "L2: " + ( l2.getSize() >> 10) + " kB, "
+						+ "line " + l2.getLineSize() + " B, "
+						+ "assoc " + ( l2.getAssociativity() < 255
+						? ( l2.getAssociativity() + "x")
+						: "full") + ", "
+						+ "type " + l2.getType()
+						+ " on cores " + Arrays.toString( l2.getCores())
+						+ ",   ");
+			}
+			if ( l3 != null) {
+				System.out.print( "L3: " + ( l3.getSize() >> 10) + " kB, "
+						+ "line " + l3.getLineSize() + " B, "
+						+ "assoc " + ( l3.getAssociativity() < 255
+						? ( l3.getAssociativity() + "x")
+						: "full") + ", "
+						+ "type " + l3.getType()
+						+ " on cores " + Arrays.toString( l3.getCores())
+						+ ",   ");
+			}
+			System.out.println();
+		}
 	}
 
 }

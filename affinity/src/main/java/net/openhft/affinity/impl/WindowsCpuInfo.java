@@ -32,7 +32,7 @@ class WindowsCpuInfo extends VanillaCpuInfo implements IGroupCpuInfo, INumaCpuIn
 				" t" + getThreadId() +
 				" n" + numaId +
 				" g" + groupId +
-				" m" + Affinity.asBitSet(mask) +
+				" m" + WindowsJNAAffinity.asBitSet(mask) +
 				'}';
 	}
 

@@ -1,6 +1,8 @@
 package net.openhft.affinity.impl.LayoutEntities;
 
 import net.openhft.affinity.*;
+import net.openhft.affinity.impl.GroupAffinityMask;
+import net.openhft.affinity.impl.WindowsJNAAffinity;
 
 import java.util.*;
 import java.util.function.IntConsumer;
@@ -35,7 +37,7 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
      * @param c
      */
     public void setEntityIds(List<ICpuInfo> cpuInfos, int groupID, IntConsumer c) {
-	    BitSet bs = bitsetMask != null ? bitsetMask : Affinity.asBitSet(groupAffinityMask.mask);
+	    BitSet bs = bitsetMask != null ? bitsetMask : WindowsJNAAffinity.asBitSet(groupAffinityMask.getMask());
         // find lowest index in cpuInfos with matching group ID
         int index = 0;
         for (index = 0; index < cpuInfos.size(); index++) {
@@ -88,9 +90,9 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
         if ( groupAffinityMask != null) {
 	        if (impl instanceof IGroupAffinity) {
 		        IGroupAffinity ga = (IGroupAffinity) impl;
-		        ga.setGroupAffinity(groupAffinityMask.groupId, groupAffinityMask.mask);
+		        ga.setGroupAffinity(groupAffinityMask.getGroupId(), groupAffinityMask.getMask());
 	        } else {
-		        impl.setAffinity(Affinity.asBitSet(groupAffinityMask.mask));
+		        impl.setAffinity(WindowsJNAAffinity.asBitSet(groupAffinityMask.getMask()));
 	        }
         } else {
         	impl.setAffinity( bitsetMask);
@@ -146,9 +148,12 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
 		    return sb.toString();
 	    }
 	    // Windows: using GroupMask instead of BitSet
-	    return "ID: " + getId() + " GM: " + groupAffinityMask.groupId + "/" + Long.toBinaryString(groupAffinityMask.getMask());
+	    return "ID: " + getId() + " GM: " + groupAffinityMask.getGroupId() + "/" + Long.toBinaryString(groupAffinityMask.getMask());
     }
 
+    /**
+     * @return String component to describe location of this {@link LayoutEntity}
+     */
     public abstract String getLocation();
 
     public void unregister(Thread t) {
@@ -157,4 +162,10 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
         }
     }
 
+    public boolean intersects(int groupId, long mask) {
+        if ( groupId != groupAffinityMask.getGroupId()) {
+            return false;
+        }
+        return ( mask & groupAffinityMask.getMask()) != 0;
+    }
 }

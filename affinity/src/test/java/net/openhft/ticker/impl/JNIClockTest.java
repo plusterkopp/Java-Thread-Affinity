@@ -17,6 +17,7 @@
 package net.openhft.ticker.impl;
 
 import net.openhft.affinity.Affinity;
+import org.junit.Assume;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -29,6 +30,7 @@ public class JNIClockTest {
 
     @Test
     public void testNanoTime() throws Exception {
+        Assume.assumeTrue( "skip " + getClass().getSimpleName(), false);
         for (int i = 0; i < 20000; i++)
             System.nanoTime();
         Affinity.setAffinity(2);

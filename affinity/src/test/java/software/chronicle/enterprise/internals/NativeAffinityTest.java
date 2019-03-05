@@ -71,7 +71,7 @@ public class NativeAffinityTest {
     }
 
     @Test
-    @Ignore("TODO AFFINITY-25")
+//    @Ignore("TODO AFFINITY-25")
     public void getAffinityReturnsValuePreviouslySet() {
         String osName = System.getProperty("os.name");
         if (!osName.startsWith("Linux")) {
@@ -88,7 +88,7 @@ public class NativeAffinityTest {
     }
 
     @Test
-    @Ignore("TODO AFFINITY-25")
+//    @Ignore("TODO AFFINITY-25")
     public void JNAwithJNI() {
         String osName = System.getProperty("os.name");
         if (!osName.startsWith("Linux")) {

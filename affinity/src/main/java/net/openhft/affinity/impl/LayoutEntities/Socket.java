@@ -1,5 +1,7 @@
 package net.openhft.affinity.impl.LayoutEntities;
 
+import net.openhft.affinity.impl.GroupAffinityMask;
+
 import java.util.BitSet;
 
 /**

@@ -21,10 +21,7 @@ import com.sun.jna.platform.win32.*;
 import com.sun.jna.ptr.*;
 import com.sun.jna.win32.*;
 import net.openhft.affinity.*;
-import net.openhft.affinity.impl.LayoutEntities.Core;
-import net.openhft.affinity.impl.LayoutEntities.Group;
-import net.openhft.affinity.impl.LayoutEntities.NumaNode;
-import net.openhft.affinity.impl.LayoutEntities.Socket;
+import net.openhft.affinity.impl.LayoutEntities.*;
 import org.slf4j.*;
 
 import java.util.*;
@@ -66,6 +63,12 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
         LOADED = loaded;
     }
 
+    public static BitSet asBitSet(long mask) {
+        long[] longs = new long[1];
+        longs[0] = mask;
+        return BitSet.valueOf(longs);
+    }
+
     /**
      * @author BegemoT
      */
@@ -100,7 +103,6 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
         LibAffinityInfo INSTANCE = (LibAffinityInfo) Native.loadLibrary("affinityInfo", LibAffinityInfo.class, W32APIOptions.UNICODE_OPTIONS);
 
         boolean getSystemRelationShipInfos( PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX_ARR.ByReference retList, IntByReference retLength);
-
     }
 
     public static class GROUP_AFFINITY extends Structure {
@@ -116,7 +118,7 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
         }
 
         public String toString() {
-            BitSet maskBS = Affinity.asBitSet(mask.longValue());
+            BitSet maskBS = asBitSet(mask.longValue());
             return "g#" + group.intValue() + "/" + maskBS.toString();
         }
     }
@@ -207,7 +209,7 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
 
         @Override
         public String toString() {
-            return "Active:" + activeProcCount + "/" + maximumProcCount + ", mask: " + Affinity.asBitSet(activeProessorMask);
+            return "Active:" + activeProcCount + "/" + maximumProcCount + ", mask: " + asBitSet(activeProessorMask);
         }
 
     }
@@ -380,6 +382,17 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
             return new Core( aff.group.intValue(), aff.mask.longValue());
         }
 
+        public Cache asCache() {
+            GROUP_AFFINITY aff = _u.cache.groupMask;
+            Cache cache = new Cache( aff.group.intValue(), aff.mask.longValue());
+            cache.setType( _u.cache.type);
+            cache.setAssociativity( _u.cache.associativity);
+            cache.setSize( _u.cache.cacheSize);
+            cache.setLevel( _u.cache.level);
+            cache.setLineSize( _u.cache.lineSize);
+            return cache;
+        }
+
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
@@ -522,7 +535,7 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
         try
         {
             long affBefore = lib.SetThreadAffinityMask(pid, aff);
-            return Affinity.asBitSet(affBefore);
+            return asBitSet(affBefore);
         }
         catch (LastErrorException e)
         {
@@ -533,10 +546,10 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
     @Override
     public void setAffinity(final BitSet affinity) {
         BitSet  sysAff = getSystemAffinity();
-        if ( ! sysAff.intersects( affinity)) {
-            LOGGER.error( "can not set affinity " + affinity + " when system affinity mask is only " + sysAff);
-            return;
-        }
+//        if ( sysAff != null && ! sysAff.intersects( affinity)) {
+//            LOGGER.error( "can not set affinity " + affinity + " when system affinity mask is only " + sysAff);
+//            return;
+//        }
         setThreadAffinity( affinity);
         BitSet affNow = getAffinity();
         if ( ! affNow.equals( affinity)) {
@@ -544,62 +557,69 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
         }
     }
 
-    public void setGroupAffinity(int groupId, long mask) {
+    public GroupAffinityMask setGroupAffinity(int groupId, long mask) {
         GROUP_AFFINITY.ByReference  garef = new GROUP_AFFINITY.ByReference();
         garef.group.setValue( groupId);
         garef.mask.setValue(mask);
 
         GROUP_AFFINITY.ByReference  garefprev = new GROUP_AFFINITY.ByReference();
         int tid = getTid();
-        LibKernel32.INSTANCE.SetThreadGroupAffinity( tid, garef, garefprev);
+        try
+        {
+            LibKernel32.INSTANCE.SetThreadGroupAffinity( tid, garef, garefprev);
+            return new GroupAffinityMask( garefprev.group.intValue(), garefprev.mask.longValue());
+        }
+        catch (LastErrorException e)
+        {
+            throw new IllegalStateException("SetThreadGroupAffinity((" + tid + ") , g" + groupId + " m" + mask + ") errorNo=" + e.getErrorCode(), e);
+        }
     }
 
     public BitSet getSystemAffinity() {
         final LibKernel32 lib = LibKernel32.INSTANCE;
-        final LongByReference procAffResult = new LongByReference(0);
-        final LongByReference systemAffResult = new LongByReference(0);
+        final LongByReference procAffResult = new LongByReference(-1);
+        final LongByReference systemAffResult = new LongByReference(-1);
         try {
-
             final int ret = lib.GetProcessAffinityMask(-1, procAffResult, systemAffResult);
             // Successful result is positive, according to the docs
             // https://msdn.microsoft.com/en-us/library/windows/desktop/ms683213%28v=vs.85%29.aspx
-            if (ret <= 0)
-            {
+            if (ret <= 0) {
                 throw new IllegalStateException("GetProcessAffinityMask(( -1 ), &(" + procAffResult + "), &(" + systemAffResult + ") ) return " + ret);
             }
-
-            return Affinity.asBitSet(systemAffResult.getValue());
+            // if we use multiple groups already, we get 0 in both masks
+            long procAffResultValue = procAffResult.getValue();
+            long systemAffResultValue = systemAffResult.getValue();
+            if ( procAffResultValue == 0 && systemAffResultValue == 0) {
+                LOGGER.info( "multi group process");
+                return null;    // anyone have a better idea how to get a special value for a bit set?
+            }
+            return asBitSet(systemAffResultValue);
         }
-        catch (Exception e)
-        {
+        catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
             e.printStackTrace();
         }
-
         return new BitSet();
     }
 
     public BitSet getProcessAffinity() {
         final LibKernel32 lib = LibKernel32.INSTANCE;
-        final LongByReference cpuset1 = new LongByReference(0);
-        final LongByReference cpuset2 = new LongByReference(0);
+        final LongByReference procAffResult = new LongByReference(0);
+        final LongByReference systemAffResult = new LongByReference(0);
         try {
-
-            final int ret = lib.GetProcessAffinityMask(- 1, cpuset1, cpuset2);
+            final int ret = lib.GetProcessAffinityMask(- 1, procAffResult, systemAffResult);
             // Successful result is positive, according to the docs
             // https://msdn.microsoft.com/en-us/library/windows/desktop/ms683213%28v=vs.85%29.aspx
-            if (ret <= 0)
-            {
-                throw new IllegalStateException("GetProcessAffinityMask(( -1 ), &(" + cpuset1 + "), &(" + cpuset2 + ") ) return " + ret);
+            if (ret <= 0) {
+                throw new IllegalStateException("GetProcessAffinityMask(( -1 ), &(" + procAffResult + "), &(" + systemAffResult + ") ) return " + ret);
             }
-            return Affinity.asBitSet(cpuset1.getValue());
+            long value = procAffResult.getValue();
+            return asBitSet( value);
         }
-        catch (Exception e)
-        {
+        catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
             e.printStackTrace();
         }
-
         return new BitSet();
     }
 
@@ -641,7 +661,7 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
             boolean ok = LibKernel32.INSTANCE.GetNumaNodeProcessorMaskEx( i, maskRet);
             if (ok) {
                 long maskRL = maskRet.mask.longValue();
-                BitSet bsMask = Affinity.asBitSet(maskRL);
+                BitSet bsMask = asBitSet(maskRL);
                 result.put( Integer.valueOf( i), bsMask);
             }
         }
