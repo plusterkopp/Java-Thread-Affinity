@@ -384,4 +384,20 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 	public List<Cache> getCaches() {
 		return caches;
 	}
+
+	public List<Cache> getCaches( int cpuId) {
+		List<Cache> allCaches = getCaches();
+		List<Cache> result = new ArrayList<>();
+		int coreId = coreId( cpuId);
+		Core core = cores.get( coreId);
+		GroupAffinityMask	coreGAM = core.getGroupMask();
+		allCaches.forEach( cache -> {
+			GroupAffinityMask cacheGAM = cache.getGroupMask();
+			if ( cacheGAM.equals( coreGAM)) {
+				result.add( cache);
+			}
+		});
+		return result;
+	}
+
 }

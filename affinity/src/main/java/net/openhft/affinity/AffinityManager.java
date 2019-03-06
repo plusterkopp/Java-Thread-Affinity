@@ -156,6 +156,34 @@ public class AffinityManager {
 		return false;
 	}
 
+	public boolean bindToCache(int cacheId) {
+		if ( cpuLayout instanceof CacheCpuLayout) {
+			CacheCpuLayout l = (CacheCpuLayout) cpuLayout;
+			try {
+				Cache cache = l.getCaches().get(cacheId);
+				return bindToCache( cache);
+			} catch ( IndexOutOfBoundsException e) {
+				return false;
+			}
+		}
+		return false;
+	}
+
+	public boolean bindToCache(Cache cache) {
+		if ( cpuLayout instanceof CacheCpuLayout) {
+			CacheCpuLayout l = (CacheCpuLayout) cpuLayout;
+			cache.bind();
+			int	cpuId = Affinity.getCpu();
+			List<Cache> caches = l.getCaches(cpuId);
+			if ( ! caches.contains( cache)) {
+				Core core = ( ( WindowsCpuLayout) cpuLayout).cores.get( cpuLayout.coreId( cpuId));
+				return false;
+			}
+			return true;
+		}
+		return false;
+	}
+
 	public void visitEntities( Consumer<LayoutEntity> visitor) {
 		if ( cpuLayout instanceof VanillaCpuLayout) {
 			VanillaCpuLayout v = (VanillaCpuLayout) cpuLayout;

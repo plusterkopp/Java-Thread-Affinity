@@ -3,6 +3,7 @@ package net.openhft.affinity;
 import com.sun.jna.platform.win32.WinNT;
 import net.openhft.affinity.impl.LayoutEntities.Cache;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public interface CacheCpuLayout {
@@ -83,4 +84,6 @@ public interface CacheCpuLayout {
     Cache getCache( int cpuId, int level);
 
     List<Cache> getCaches();
+
+    List<Cache> getCaches( int cpuId);
 }

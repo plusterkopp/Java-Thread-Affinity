@@ -74,11 +74,11 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 	@Test
 	public void testShow() {
 		testRelationType( "all relations", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationAll);
-		 testRelationType( "cores", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationProcessorCore);
-		 testRelationType("packages", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationProcessorPackage);
-		 testRelationType( "caches", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationCache);
-		 testRelationType("getNodes", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationNumaNode);
-		 testRelationType("groups", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationGroup);
+		testRelationType( "cores", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationProcessorCore);
+		testRelationType("packages", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationProcessorPackage);
+		testRelationType( "caches", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationCache);
+		testRelationType("getNodes", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationNumaNode);
+		testRelationType("groups", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationGroup);
 	}
 
 	void testRelationType( String name, int typeID) {

@@ -58,6 +58,19 @@ public class AffinityManagerTest {
 				Assert.assertTrue("can not bind core " + core.getId(), success);
 			}
 		}
+		if ( layout instanceof CacheCpuLayout) {
+			CacheCpuLayout cacheLayout = (CacheCpuLayout) layout;
+			// Caches, more than one loop
+			for ( int i = 0;  i < 100;  i++) {
+				for (Cache cache : cacheLayout.getCaches()) {
+					if ( i == 0) {
+						System.out.println("binding to cache " + cache);
+					}
+					boolean success = AffinityManager.INSTANCE.bindToCache( cache.getId());
+					Assert.assertTrue("can not bind cache " + cache + "(" + i + ")", success);
+				}
+			}
+		}
 		// must not bind for other ids
 		final int wrongSocketId = layout.sockets() + 1;
 		System.out.println( "not binding to socket " + wrongSocketId);
@@ -67,7 +80,7 @@ public class AffinityManagerTest {
 	}
 
 	@Test
-	public void testUnbind() {
+	public void testBoundTo() {
 		// Nodes
 		final AffinityManager am = AffinityManager.INSTANCE;
 		if ( layout instanceof GroupedCpuLayout) {
