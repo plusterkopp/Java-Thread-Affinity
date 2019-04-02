@@ -21,9 +21,14 @@
         <module name="affinity" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel target="1.8">
-      <module name="affinity" target="1.8" />
-      <module name="Java-Thread-Affinity" target="1.8" />
+    <bytecodeTargetLevel target="8">
+      <module name="affinity" target="8" />
+      <module name="Java-Thread-Affinity" target="8" />
     </bytecodeTargetLevel>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="affinity" options="-Xlint:deprecation" />
+    </option>
   </component>
 </project>

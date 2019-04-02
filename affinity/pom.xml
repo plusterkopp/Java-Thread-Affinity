@@ -25,13 +25,13 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <groupId>pkmd</groupId>
+    <groupId>de.pkmd</groupId>
     <artifactId>affinity</artifactId>
     <version>3.2-SNAPSHOT</version>
     <packaging>bundle</packaging>
 
-    <name>PKMD/Java-Thread-Affinity/affinity</name>
-    <description>Java Thread Affinity library</description>
+    <name>Java-Thread-Affinity/affinity</name>
+    <description>Java Thread Affinity library with Windows support</description>
 
     <properties>
         <native.source.dir>src/main/c</native.source.dir>

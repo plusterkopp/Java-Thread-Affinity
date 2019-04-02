@@ -44,8 +44,8 @@ public class AffinityManagerTest {
 				if ( i == 0) {
 					System.out.println("binding to socket " + socket);
 				}
-				boolean success = AffinityManager.INSTANCE.bindToSocket(socket.getId());
-				Assert.assertTrue("can not bind socket " + socket.getId(), success);
+				boolean success = AffinityManager.INSTANCE.bindToSocket(socket);
+				Assert.assertTrue("can not bind socket " + socket + " in round " + i, success);
 			}
 		}
 		// Cores, more than one loop
@@ -75,7 +75,7 @@ public class AffinityManagerTest {
 		final int wrongSocketId = layout.sockets() + 1;
 		System.out.println( "not binding to socket " + wrongSocketId);
 		boolean success = AffinityManager.INSTANCE.bindToSocket(wrongSocketId);
-		Assert.assertFalse( "bount to non-existing socket " + wrongSocketId, success);
+		Assert.assertFalse( "bound to non-existing socket " + wrongSocketId, success);
 
 	}
 
