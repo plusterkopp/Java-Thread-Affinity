@@ -23,7 +23,7 @@
     </annotationProcessing>
     <bytecodeTargetLevel target="8">
       <module name="affinity" target="8" />
-      <module name="Java-Thread-Affinity" target="8" />
+      <module name="Java-Thread-Affinity" target="1.5" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">

@@ -4,9 +4,9 @@ import net.openhft.affinity.impl.LayoutEntities.*;
 import net.openhft.affinity.impl.*;
 import org.slf4j.*;
 
-import java.io.File;
+import java.io.*;
 import java.util.*;
-import java.util.function.Consumer;
+import java.util.function.*;
 
 
 /**
@@ -42,7 +42,7 @@ public class AffinityManager {
 
 	/**
 	 * try to bind the current thread to a socket
-	 * @param socketId
+	 * @param socketId id of socket
 	 * @return true if the current cpu after the call is one the desired socket, or false
 	 */
 	public boolean bindToSocket( int socketId) {
@@ -69,7 +69,10 @@ public class AffinityManager {
 			}
 			ICpuInfo current = w.getCPUInfo( cpuId);
 			BitSet  desired = (BitSet) socket.getBitMask().clone();
-			Socket currentSocket = w.packages.stream().filter( s -> s.getId() == currentSocketId).findFirst().get();
+			Socket currentSocket = w.packages.stream()
+				.filter( s -> s.getId() == currentSocketId)
+				.findFirst()
+				.get();
 			BitSet  ofCurrentSocket = (BitSet) currentSocket.getBitMask().clone();
 			ofCurrentSocket.and( desired);
 			System.err.print( "can not bind: " + socket + ", bound to " + currentSocket + " masks intersect at " + ofCurrentSocket) ;
@@ -195,6 +198,11 @@ public class AffinityManager {
 			v.packages.forEach( visitor);
 			v.cores.forEach( visitor);
 		}
+		if ( cpuLayout instanceof CacheCpuLayout) {
+			CacheCpuLayout l = (CacheCpuLayout) cpuLayout;
+			List<Cache> caches = l.getCaches();
+			caches.forEach( visitor);
+		}
 	}
 
 	public void unregisterFromOthers(LayoutEntity current, Thread t) {
@@ -241,14 +249,15 @@ public class AffinityManager {
 			VanillaCpuLayout wcpul = (VanillaCpuLayout) cpuLayout;
 			List<LayoutEntity> result = new ArrayList<>(1);
 			Consumer<LayoutEntity> addIfHasThread = (entity) -> {
-				if ( entity.getThreads().contains( thread)) {
+				List<Thread> entityThreads = entity.getThreads();
+				if ( entityThreads.contains( thread)) {
 					result.add( entity);
 				}
 			};
 			visitEntities(addIfHasThread);
 			return result;
 		}
-		return Collections.EMPTY_LIST;
+		return Collections.emptyList();
 
 	}
 

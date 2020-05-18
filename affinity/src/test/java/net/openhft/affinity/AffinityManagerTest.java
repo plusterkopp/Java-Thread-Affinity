@@ -1,13 +1,10 @@
 package net.openhft.affinity;
 
-import net.openhft.affinity.impl.*;
 import net.openhft.affinity.impl.LayoutEntities.*;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import net.openhft.affinity.impl.*;
+import org.junit.*;
 
-import java.util.List;
+import java.util.*;
 
 public class AffinityManagerTest {
 
@@ -15,7 +12,7 @@ public class AffinityManagerTest {
 	static private VanillaCpuLayout layout = null;
 
 	@BeforeClass
-	public static void setUpBeforeClass() throws Exception {
+	public static void setUpBeforeClass() {
 		impl = Affinity.getAffinityImpl();
 		if ( impl instanceof IDefaultLayoutAffinity) {
 			IDefaultLayoutAffinity dla = (IDefaultLayoutAffinity) impl;
@@ -67,7 +64,7 @@ public class AffinityManagerTest {
 						System.out.println("binding to cache " + cache);
 					}
 					boolean success = AffinityManager.INSTANCE.bindToCache( cache.getId());
-					Assert.assertTrue("can not bind cache " + cache + "(" + i + ")", success);
+					Assert.assertTrue("can not bind cache " + cache + " (" + i + ")", success);
 				}
 			}
 		}
@@ -86,34 +83,54 @@ public class AffinityManagerTest {
 		if ( layout instanceof GroupedCpuLayout) {
 			GroupedCpuLayout gLayout = (GroupedCpuLayout) layout;
 			for (Group group : gLayout.getGroups()) {
-				System.out.println("binding to group " + group);
+				System.out.print("binding to group " + group);
 				boolean success = am.bindToGroup(group);
 				List<LayoutEntity> boundTo = am.getBoundTo(Thread.currentThread());
+				System.out.println(" … bound to " + boundTo);
 				Assert.assertEquals("too many entities " + boundTo, 1, boundTo.size());
+				Assert.assertEquals( "bound to another entity", group, boundTo.get( 0));
 			}
 		}
 		if ( layout instanceof NumaCpuLayout) {
 			NumaCpuLayout nLayout = (NumaCpuLayout) layout;
 			for (NumaNode node : nLayout.getNodes()) {
-				System.out.println("binding to node " + node);
+				System.out.print("binding to node " + node);
 				boolean success = am.bindToNode(node);
 				List<LayoutEntity> boundTo = am.getBoundTo(Thread.currentThread());
+				System.out.println(" … bound to " + boundTo);
 				Assert.assertEquals("too many entities " + boundTo, 1, boundTo.size());
+				Assert.assertEquals( "bound to another entity", node, boundTo.get( 0));
 			}
 		}
 		// Sockets
 		for (Socket socket : layout.packages) {
-			System.out.println( "binding to socket " + socket);
+			System.out.print( "binding to socket " + socket);
 			boolean success = am.bindToSocket(socket);
 			List<LayoutEntity> boundTo = am.getBoundTo(Thread.currentThread());
+			System.out.println(" … bound to " + boundTo);
 			Assert.assertEquals("too many entities " + boundTo, 1, boundTo.size());
+			Assert.assertEquals( "bound to another entity", socket, boundTo.get( 0));
 		}
 		// Cores
 		for (Core core: layout.cores) {
-			System.out.println( "binding to core " + core);
+			System.out.print( "binding to core " + core);
 			boolean success = am.bindToCore(core);
 			List<LayoutEntity> boundTo = am.getBoundTo(Thread.currentThread());
+			System.out.println(" … bound to " + boundTo);
 			Assert.assertEquals("too many entities " + boundTo, 1, boundTo.size());
+			Assert.assertEquals( "bound to another entity", core, boundTo.get( 0));
+		}
+		// Caches
+		if ( layout instanceof CacheCpuLayout) {
+			CacheCpuLayout cacheLayout = (CacheCpuLayout) layout;
+			for (Cache cache : cacheLayout.getCaches()) {
+				System.out.print("binding to cache " + cache);
+				boolean success = am.bindToCache( cache.getId());
+				List<LayoutEntity> boundTo = am.getBoundTo(Thread.currentThread());
+				System.out.println(" … bound to " + boundTo);
+				Assert.assertEquals("too many entities " + boundTo, 1, boundTo.size());
+				Assert.assertEquals( "bound to another entity", cache, boundTo.get( 0));
+			}
 		}
 	}
 

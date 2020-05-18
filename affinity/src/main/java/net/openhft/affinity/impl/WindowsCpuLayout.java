@@ -1,14 +1,13 @@
 package net.openhft.affinity.impl;
 
-import com.sun.jna.platform.win32.WinNT;
+import com.sun.jna.platform.win32.*;
 import net.openhft.affinity.*;
 import net.openhft.affinity.impl.LayoutEntities.*;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 
 import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Stream;
+import java.util.function.*;
+import java.util.stream.*;
 
 /**
  * Provides another method to define a layout using a simple string.
@@ -40,11 +39,11 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 				cpuDetailsFull.add((WindowsCpuInfo) info);
 			}
 		}
-		groups = Collections.unmodifiableList( new ArrayList<Group>( groupSet));
-		nodes = Collections.unmodifiableList( new ArrayList<NumaNode>( nodeSet));
-		packages = Collections.unmodifiableList( new ArrayList<Socket>( packageSet));
-		cores = Collections.unmodifiableList( new ArrayList<Core>( coreSet));
-		caches = Collections.unmodifiableList( new ArrayList<Cache>( cacheSet));
+		groups = Collections.unmodifiableList( new ArrayList<>( groupSet));
+		nodes = Collections.unmodifiableList( new ArrayList<>( nodeSet));
+		packages = Collections.unmodifiableList( new ArrayList<>( packageSet));
+		cores = Collections.unmodifiableList( new ArrayList<>( coreSet));
+		caches = Collections.unmodifiableList( new ArrayList<>( cacheSet));
 		caches.forEach( cache -> cache.setLayout( this));
 	}
 
@@ -152,6 +151,13 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 	        });
 	    }
 
+	    // Caches
+		id = 0;
+		for ( Cache ca : caches) {
+			ca.setId(id++);
+		}
+
+
 		// Thread IDs and masks
 		List<Core> coreList = new ArrayList<>( cores);
 		// set threadIds to be relative to coreId
@@ -192,7 +198,7 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 	}
 
 	/**
-	 * @param size
+	 * @param size size
 	 * @return unmodifiable List of size CpuInfo
 	 */
 	@NotNull
@@ -273,16 +279,16 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 	}
 
 	Stream<Cache> cachesIntersecting(int cpuId) {
-		WindowsCpuInfo cpuInfo = (WindowsCpuInfo) lCpu( cpuId);
+		WindowsCpuInfo cpuInfo = lCpu( cpuId);
 		return caches.stream().
 				filter( cache -> cache.intersects( cpuInfo.getGroupId(), cpuInfo.getMask()));
 	}
 
 	/**
 	 * we only want one hit, therefore ignore Instruction Cache
-	 * @param cpuId
-	 * @param level
-	 * @param getter
+	 * @param cpuId cpuId
+	 * @param level cache level
+	 * @param getter getter
 	 * @return usually some sort of size
 	 */
 	private long getCacheInfo(int cpuId, int level, Function<Cache, Long> getter) {
@@ -385,7 +391,7 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 		return caches;
 	}
 
-	public List<Cache> getCaches( int cpuId) {
+	public List<Cache> getCachesForCore( int cpuId) {
 		List<Cache> allCaches = getCaches();
 		List<Cache> result = new ArrayList<>();
 		int coreId = coreId( cpuId);
@@ -398,6 +404,11 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 			}
 		});
 		return result;
+	}
+
+	public List<Cache> getCaches( int cpuId) {
+		Stream<Cache> cacheS = cachesIntersecting(cpuId);
+		return cacheS.collect( Collectors.toList());
 	}
 
 }
