@@ -262,5 +262,30 @@ public class AffinityManager {
 	}
 
 
-
+	public void dumpLayout() {
+		SortedSet<LayoutEntity> sortedEntities = new TreeSet<LayoutEntity>( ( a, b) -> {
+			GroupAffinityMask gamA = a.getGroupMask();
+			GroupAffinityMask gamB = b.getGroupMask();
+			if ( gamA.getGroupId() != gamB.getGroupId()) {
+				return Integer.compare( gamA.getGroupId(), gamB.getGroupId());
+			}
+			if ( gamA.getMask() != gamB.getMask()) {
+				return -Long.compare( gamA.getMask(), gamB.getMask());
+			}
+			if ( ( a instanceof Cache) && ( b instanceof Cache)) {
+				Cache ca = (Cache) a;
+				Cache cb = (Cache) b;
+				return Integer.compare( ca.getLevel(), cb.getLevel());
+			}
+			if (a instanceof Core) {
+				return -1;
+			}
+			if (b instanceof Core) {
+				return 1;
+			}
+			return Integer.compare( Objects.hashCode( a), Objects.hashCode( b));
+		});
+		visitEntities( e -> sortedEntities.add( e));
+		sortedEntities.forEach( e -> System.out.println( e.getClass().getSimpleName() + ": " + e));
+	}
 }

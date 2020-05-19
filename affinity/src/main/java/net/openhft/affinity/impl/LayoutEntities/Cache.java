@@ -106,7 +106,7 @@ public class Cache extends LayoutEntity {
         }
         WindowsCpuLayout wLayout = (WindowsCpuLayout) layout;
         return wLayout.cores.stream()
-                .filter( core -> core.groupAffinityMask.getGroupId() != groupAffinityMask.getGroupId())
+                .filter( core -> core.groupAffinityMask.getGroupId() == groupAffinityMask.getGroupId())
                 .filter( core -> ( groupAffinityMask.getMask() & core.groupAffinityMask.getMask()) != 0)
                 .mapToInt( core -> core.getId())
                 .toArray();

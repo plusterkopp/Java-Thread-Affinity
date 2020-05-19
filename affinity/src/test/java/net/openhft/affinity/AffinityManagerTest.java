@@ -22,6 +22,7 @@ public class AffinityManagerTest {
 			}
 		}
 		Assume.assumeTrue( "can not run with " + impl.getClass(), layout != null);
+		AffinityManager.INSTANCE.dumpLayout();
 	}
 
 	@Test
