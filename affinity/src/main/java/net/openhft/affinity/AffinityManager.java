@@ -270,7 +270,7 @@ public class AffinityManager {
 				return Integer.compare( gamA.getGroupId(), gamB.getGroupId());
 			}
 			if ( gamA.getMask() != gamB.getMask()) {
-				return -Long.compare( gamA.getMask(), gamB.getMask());
+				return -Long.compareUnsigned( gamA.getMask(), gamB.getMask());
 			}
 			if ( ( a instanceof Cache) && ( b instanceof Cache)) {
 				Cache ca = (Cache) a;

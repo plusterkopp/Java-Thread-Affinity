@@ -113,6 +113,6 @@ public class Cache extends LayoutEntity {
     }
 
     public String toString() {
-        return super.toString() + " L" + level + " " + type.shortName();
+        return "" + level + " " + super.toString(); //  + " L" + level + " " + type.shortName();
     }
 }

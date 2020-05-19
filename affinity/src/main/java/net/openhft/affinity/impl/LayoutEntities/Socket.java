@@ -32,7 +32,9 @@ public class Socket extends LayoutEntity {
     }
 
     public String toString() {
-        return "S " + super.toString() + ( node == null ? "" : " on " + getNode());
+        return "S " + super.toString()
+                // + ( node == null ? "" : " on " + getNode())
+        ;
     }
 
     public String getLocation() {

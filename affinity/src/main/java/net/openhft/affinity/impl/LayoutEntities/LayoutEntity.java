@@ -136,19 +136,30 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
 		    StringBuilder    bitSB = new StringBuilder( 200);
 		    long   bits[] = bitsetMask.toLongArray();
 		    for (int i = bits.length - 1; i >= 0; i--) {
-			    bitSB.append( Long.toBinaryString( bits[ i]))
-					    .append("/");
-		    }
-		    // insert dots for readability
-		    for ( int i = bitSB.length() - 9;  i > 0;  i -= 8) {
-		    	bitSB.insert( i, '.');
+			    bitSB.append( longMaskToString( bits[ i]))
+					    .append(" ");
 		    }
 		    bitSB.setLength( bitSB.length() - 1);
 		    sb.append( bitSB);
 		    return sb.toString();
 	    }
 	    // Windows: using GroupMask instead of BitSet
-	    return "ID: " + getId() + " GM: " + groupAffinityMask.getGroupId() + "/" + Long.toBinaryString(groupAffinityMask.getMask());
+	    return "ID: " + getId() + " GM: " + groupAffinityMask.getGroupId() + "/" + longMaskToString( groupAffinityMask.getMask());
+    }
+
+    String longMaskToString( long l) {
+		StringBuilder sb = new StringBuilder( 100);
+		sb.append( Long.toBinaryString( l));
+	    char[] zeros = new char[64 - sb.length()];
+	    Arrays.fill( zeros, '0');
+	    sb.insert( 0, zeros);
+	    for ( int i = sb.length() - 8;  i > 0;  i -= 8) {
+		    sb.insert( i, '.');
+	    }
+	    String result = sb.toString();
+	    result = result.replace( "11111111", "FF");
+	    result = result.replace( "00000000", "OO");
+	    return result;
     }
 
     /**
