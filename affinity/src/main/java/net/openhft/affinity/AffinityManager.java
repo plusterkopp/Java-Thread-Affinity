@@ -263,27 +263,43 @@ public class AffinityManager {
 
 
 	public void dumpLayout() {
-		SortedSet<LayoutEntity> sortedEntities = new TreeSet<LayoutEntity>( ( a, b) -> {
+		SortedSet<LayoutEntity> sortedEntities = new TreeSet<LayoutEntity>((a, b) -> {
 			GroupAffinityMask gamA = a.getGroupMask();
 			GroupAffinityMask gamB = b.getGroupMask();
-			if ( gamA.getGroupId() != gamB.getGroupId()) {
-				return Integer.compare( gamA.getGroupId(), gamB.getGroupId());
+			if (gamA != null && gamB != null) {
+				if (gamA.getGroupId() != gamB.getGroupId()) {
+					return Integer.compare(gamA.getGroupId(), gamB.getGroupId());
+				}
+				if (gamA.getMask() != gamB.getMask()) {
+					return -Long.compareUnsigned(gamA.getMask(), gamB.getMask());
+				}
+				if ((a instanceof Cache) && (b instanceof Cache)) {
+					Cache ca = (Cache) a;
+					Cache cb = (Cache) b;
+					return Integer.compare(ca.getLevel(), cb.getLevel());
+				}
+				if (a instanceof Core) {
+					return -1;
+				}
+				if (b instanceof Core) {
+					return 1;
+				}
+			} else {	// should be hierarchical. Linux doesn't assign SMT bits next to each other.
+				BitSet bsA = a.getBitMask();
+				long[] longBitsA = bsA.toLongArray();
+				BitSet bsB = b.getBitMask();
+				long[] longBitsB = bsB.toLongArray();
+				for (int i = longBitsA.length - 1; i >= 0; i--) {
+					long maskA = longBitsA[i];
+					long maskB = longBitsB[i];
+					if (maskA != maskB) {
+						return -Long.compareUnsigned( maskA, maskB);
+					}
+					// Caches kennen wir hier nicht :(
+				}
+
 			}
-			if ( gamA.getMask() != gamB.getMask()) {
-				return -Long.compareUnsigned( gamA.getMask(), gamB.getMask());
-			}
-			if ( ( a instanceof Cache) && ( b instanceof Cache)) {
-				Cache ca = (Cache) a;
-				Cache cb = (Cache) b;
-				return Integer.compare( ca.getLevel(), cb.getLevel());
-			}
-			if (a instanceof Core) {
-				return -1;
-			}
-			if (b instanceof Core) {
-				return 1;
-			}
-			return Integer.compare( Objects.hashCode( a), Objects.hashCode( b));
+			return Integer.compare(Objects.hashCode(a), Objects.hashCode(b));
 		});
 		visitEntities( e -> sortedEntities.add( e));
 		sortedEntities.forEach( e -> System.out.println( e.getClass().getSimpleName() + ": " + e));
