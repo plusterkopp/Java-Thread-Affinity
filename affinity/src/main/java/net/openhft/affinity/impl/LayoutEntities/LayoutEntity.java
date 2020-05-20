@@ -150,7 +150,8 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
     String longMaskToString( long l) {
 		StringBuilder sb = new StringBuilder( 100);
 		sb.append( Long.toBinaryString( l));
-	    char[] zeros = new char[64 - sb.length()];
+		int groupSize = getGroupSize();
+	    char[] zeros = new char[ groupSize - sb.length()];
 	    Arrays.fill( zeros, '0');
 	    sb.insert( 0, zeros);
 	    for ( int i = sb.length() - 8;  i > 0;  i -= 8) {
@@ -160,6 +161,18 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
 	    result = result.replace( "11111111", "FF");
 	    result = result.replace( "00000000", "OO");
 	    return result;
+    }
+
+    private int getGroupSize() {
+        CpuLayout cpuLayout = AffinityManager.INSTANCE.getLayout();
+        if ( cpuLayout instanceof GroupedCpuLayout) {
+            GroupedCpuLayout groupLayout = (GroupedCpuLayout) cpuLayout;
+            int groupId = groupAffinityMask.getGroupId();
+            List<? extends Group> groups = groupLayout.getGroups();
+            Group group = groups.get(groupId);
+            return group.getMSB();
+        }
+        return cpuLayout.cpus();
     }
 
     /**

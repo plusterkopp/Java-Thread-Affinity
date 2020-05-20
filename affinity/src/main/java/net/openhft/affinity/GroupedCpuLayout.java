@@ -2,6 +2,8 @@ package net.openhft.affinity;
 
 import net.openhft.affinity.impl.LayoutEntities.Group;
 
+import java.util.List;
+
 /**
  * extend CpuLayout
  * Created by plusterkopp on 17.09.2015.
@@ -14,5 +16,5 @@ public interface GroupedCpuLayout {
 
 	long mask( int cpuId);
 
-	Iterable<? extends Group> getGroups();
+	List<? extends Group> getGroups();
 }

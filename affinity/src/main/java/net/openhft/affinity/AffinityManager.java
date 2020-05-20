@@ -22,7 +22,7 @@ public class AffinityManager {
 		cpuLayout = getLayout();
 	}
 
-	private CpuLayout getLayout() {
+	public CpuLayout getLayout() {
 		CpuLayout layout = new NoCpuLayout(Runtime.getRuntime().availableProcessors());
 		IAffinity impl = Affinity.getAffinityImpl();
 		if (impl instanceof IDefaultLayoutAffinity) {

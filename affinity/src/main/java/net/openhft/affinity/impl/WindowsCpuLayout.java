@@ -223,7 +223,7 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 	}
 
 	@Override
-	public Iterable<? extends Group> getGroups() {
+	public List<? extends Group> getGroups() {
 		return groups;
 	}
 
