@@ -263,6 +263,11 @@ public class AffinityManager {
 
 
 	public void dumpLayout() {
+		StringBuilder sb = new StringBuilder();
+		System.out.print( sb);
+	}
+
+	public void dumpLayout( StringBuilder sb) {
 		SortedSet<LayoutEntity> sortedEntities = new TreeSet<LayoutEntity>((a, b) -> {
 			GroupAffinityMask gamA = a.getGroupMask();
 			GroupAffinityMask gamB = b.getGroupMask();
@@ -302,6 +307,6 @@ public class AffinityManager {
 			return Integer.compare(Objects.hashCode(a), Objects.hashCode(b));
 		});
 		visitEntities( e -> sortedEntities.add( e));
-		sortedEntities.forEach( e -> System.out.println( e.getClass().getSimpleName() + ": " + e));
+		sortedEntities.forEach( e -> sb.append( e.getClass().getSimpleName() + ": " + e + "\n"));
 	}
 }
