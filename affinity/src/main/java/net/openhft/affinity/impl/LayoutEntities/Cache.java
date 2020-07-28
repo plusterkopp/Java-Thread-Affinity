@@ -19,6 +19,8 @@ public class Cache extends LayoutEntity {
     private short lineSize;
     CpuLayout   layout;
 
+    private String locationCache = null;
+
     public Cache(int group, long mask) {
         super(group, mask);
     }
@@ -72,12 +74,33 @@ public class Cache extends LayoutEntity {
     }
 
     private String getLocation( WindowsCpuLayout layout) {
+        if (locationCache != null) {
+            return locationCache;
+        }
         StringBuilder sb = new StringBuilder( 20);
-        layout.cores.forEach( core -> sb.append( core.getId()).append( "+"));
+        layout.cores.forEach( core -> {
+            if ( servesCore( core)) {
+                sb.append(core.getId()).append("+");
+            }
+        });
         if ( sb.length() > 0) {
             sb.setLength( sb.length() - 1);
         }
-        return sb.toString();
+        locationCache = sb.toString();
+        return locationCache;
+    }
+
+    private boolean servesCore(Core core) {
+        GroupAffinityMask gmc = core.getGroupMask();
+        GroupAffinityMask gm = getGroupMask();
+        if ( gm.getGroupId() == gmc.getGroupId()) {
+            long mc = gmc.getMask();
+            long m = gm.getMask();
+            if ( ( mc & m) != 0) {  // really, this should be a test that mc is a bitwise subset of m
+                return true;
+            }
+        }
+        return false;
     }
 
     public void setLayout( CpuLayout cpuLayout) {

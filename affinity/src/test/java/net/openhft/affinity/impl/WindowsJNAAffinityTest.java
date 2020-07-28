@@ -258,4 +258,11 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 		}
 	}
 
+	@Test
+	public void listCacheCoreRelations() {
+		WindowsCpuLayout    cpuLayout = (WindowsCpuLayout) WinImpl.getDefaultLayout();
+		cpuLayout.getCaches().forEach( cache -> {
+			System.out.println( "Cache " + cache + " on " + cache.getLocation());
+		});
+	}
 }
