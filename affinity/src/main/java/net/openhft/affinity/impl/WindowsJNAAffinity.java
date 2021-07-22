@@ -24,6 +24,9 @@ import net.openhft.affinity.*;
 import net.openhft.affinity.impl.LayoutEntities.*;
 import org.slf4j.*;
 
+import static com.sun.jna.platform.win32.WinNT.*;
+//import static com.sun.jna.platform.win32.BaseTSD.*;
+
 import java.util.*;
 
 /**
@@ -77,7 +80,7 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
 
         int GetProcessAffinityMask(final int pid, final PointerType lpProcessAffinityMask, final PointerType lpSystemAffinityMask) throws LastErrorException;
 
-        long SetThreadAffinityMask(final int pid, final WinDef.DWORDLONG lpProcessAffinityMask) throws LastErrorException;
+        DWORD_PTR SetThreadAffinityMask( HANDLE thread, final DWORD_PTR lpProcessAffinityMask) throws LastErrorException;
 
         int GetCurrentThread() throws LastErrorException;
 
@@ -89,8 +92,9 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
 
         void GetCurrentProcessorNumberEx( PROCESSOR_NUMBER.ByReference resultRef);
 
-        boolean SetThreadGroupAffinity( final int tid, GROUP_AFFINITY.ByReference gaRefNew, GROUP_AFFINITY.ByReference gaRefOld);
+        boolean SetThreadGroupAffinity( final HANDLE tid, GROUP_AFFINITY.ByReference gaRefNew, GROUP_AFFINITY.ByReference gaRefOld);
     }
+
 
     private final ThreadLocal<Integer> THREAD_ID = new ThreadLocal<>();
     private final ThreadLocal<PROCESSOR_NUMBER.ByReference> ProcNumRef =
@@ -492,10 +496,10 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
     }
 
     public int getTid() {
-        final LibKernel32 lib = LibKernel32.INSTANCE;
+        Kernel32 lib = Kernel32.INSTANCE;
 
         try {
-            return lib.GetCurrentThread();
+            return lib.GetCurrentThreadId(); // GetCurrentThread();
         } catch (LastErrorException e) {
             throw new IllegalStateException("GetCurrentThread( ) errorNo=" + e.getErrorCode(), e);
         }
@@ -515,31 +519,29 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
     }
 
     public BitSet setThreadAffinity(final BitSet affinity) {
-        final LibKernel32 lib = LibKernel32.INSTANCE;
-
-        WinDef.DWORDLONG aff;
+        DWORD_PTR aff;
         long[] longs = affinity.toLongArray();
         switch (longs.length)
         {
             case 0:
-                aff = new WinDef.DWORDLONG(0);
+                aff = new DWORD_PTR( 0); // new WinDef.DWORDLONG(0);
                 break;
             case 1:
-                aff = new WinDef.DWORDLONG(longs[0]);
+                aff = new DWORD_PTR(longs[0]);// new WinDef.DWORDLONG(longs[0]);
                 break;
             default:
                 throw new IllegalArgumentException("Windows API does not support more than 64 CPUs for thread affinity");
         }
 
-        int pid = getTid();
+        WinNT.HANDLE threadHandle = Kernel32.INSTANCE.GetCurrentThread();
         try
         {
-            long affBefore = lib.SetThreadAffinityMask(pid, aff);
-            return asBitSet(affBefore);
+            DWORD_PTR affBefore = LibKernel32.INSTANCE.SetThreadAffinityMask(threadHandle, aff);
+            return asBitSet(affBefore.longValue());
         }
         catch (LastErrorException e)
         {
-            throw new IllegalStateException("SetThreadAffinityMask((" + pid + ") , &(" + affinity + ") ) errorNo=" + e.getErrorCode(), e);
+            throw new IllegalStateException("SetThreadAffinityMask((" + threadHandle + ") , &(" + affinity + ") ) errorNo=" + e.getErrorCode(), e);
         }
     }
 
@@ -563,37 +565,33 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
         garef.mask.setValue(mask);
 
         GROUP_AFFINITY.ByReference  garefprev = new GROUP_AFFINITY.ByReference();
-        int tid = getTid();
+        HANDLE threadHandle = Kernel32.INSTANCE.GetCurrentThread();
         try
         {
-            LibKernel32.INSTANCE.SetThreadGroupAffinity( tid, garef, garefprev);
+            LibKernel32.INSTANCE.SetThreadGroupAffinity( threadHandle, garef, garefprev);
             return new GroupAffinityMask( garefprev.group.intValue(), garefprev.mask.longValue());
         }
         catch (LastErrorException e)
         {
-            throw new IllegalStateException("SetThreadGroupAffinity((" + tid + ") , g" + groupId + " m" + mask + ") errorNo=" + e.getErrorCode(), e);
+            throw new IllegalStateException("SetThreadGroupAffinity((" + threadHandle + ") , g" + groupId + " m" + mask + ") errorNo=" + e.getErrorCode(), e);
         }
     }
 
     public BitSet getSystemAffinity() {
-        final LibKernel32 lib = LibKernel32.INSTANCE;
-        final LongByReference procAffResult = new LongByReference(-1);
-        final LongByReference systemAffResult = new LongByReference(-1);
+        final Kernel32 lib = Kernel32.INSTANCE;
+        final ULONG_PTRByReference procAffResult = new ULONG_PTRByReference();
+        final ULONG_PTRByReference systemAffResult = new ULONG_PTRByReference();
         try {
-            final int ret = lib.GetProcessAffinityMask(-1, procAffResult, systemAffResult);
+            int myPid = Kernel32.INSTANCE.GetCurrentProcessId();
+            WinNT.HANDLE pHandle = Kernel32.INSTANCE.OpenProcess(WinNT.PROCESS_QUERY_INFORMATION, false, myPid);
+            final boolean success = lib.GetProcessAffinityMask(pHandle, procAffResult, systemAffResult);
             // Successful result is positive, according to the docs
             // https://msdn.microsoft.com/en-us/library/windows/desktop/ms683213%28v=vs.85%29.aspx
-            if (ret <= 0) {
-                throw new IllegalStateException("GetProcessAffinityMask(( -1 ), &(" + procAffResult + "), &(" + systemAffResult + ") ) return " + ret);
+            if ( ! success) {
+                throw new IllegalStateException("GetProcessAffinityMask(( -1 ), &(" + procAffResult + "), &(" + systemAffResult + ") ) return " + success);
             }
-            // if we use multiple groups already, we get 0 in both masks
-            long procAffResultValue = procAffResult.getValue();
-            long systemAffResultValue = systemAffResult.getValue();
-            if ( procAffResultValue == 0 && systemAffResultValue == 0) {
-                LOGGER.info( "multi group process");
-                return null;    // anyone have a better idea how to get a special value for a bit set?
-            }
-            return asBitSet(systemAffResultValue);
+            ULONG_PTR value = systemAffResult.getValue();
+            return asBitSet( value.longValue());
         }
         catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
@@ -603,18 +601,20 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
     }
 
     public BitSet getProcessAffinity() {
-        final LibKernel32 lib = LibKernel32.INSTANCE;
-        final LongByReference procAffResult = new LongByReference(0);
-        final LongByReference systemAffResult = new LongByReference(0);
+        final Kernel32 lib = Kernel32.INSTANCE;
+        final ULONG_PTRByReference procAffResult = new ULONG_PTRByReference();
+        final ULONG_PTRByReference systemAffResult = new ULONG_PTRByReference();
         try {
-            final int ret = lib.GetProcessAffinityMask(- 1, procAffResult, systemAffResult);
+            int myPid = Kernel32.INSTANCE.GetCurrentProcessId();
+            WinNT.HANDLE pHandle = Kernel32.INSTANCE.OpenProcess(WinNT.PROCESS_QUERY_INFORMATION, false, myPid);
+            final boolean success = lib.GetProcessAffinityMask(pHandle, procAffResult, systemAffResult);
             // Successful result is positive, according to the docs
             // https://msdn.microsoft.com/en-us/library/windows/desktop/ms683213%28v=vs.85%29.aspx
-            if (ret <= 0) {
-                throw new IllegalStateException("GetProcessAffinityMask(( -1 ), &(" + procAffResult + "), &(" + systemAffResult + ") ) return " + ret);
+            if ( ! success) {
+                throw new IllegalStateException("GetProcessAffinityMask(( -1 ), &(" + procAffResult + "), &(" + systemAffResult + ") ) return " + success);
             }
-            long value = procAffResult.getValue();
-            return asBitSet( value);
+            ULONG_PTR value = procAffResult.getValue();
+            return asBitSet( value.longValue());
         }
         catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
