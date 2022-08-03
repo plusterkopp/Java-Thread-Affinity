@@ -22,7 +22,7 @@ public class AffinityManagerTest {
 			}
 		}
 		Assume.assumeTrue( "can not run with " + impl.getClass(), layout != null);
-		AffinityManager.INSTANCE.dumpLayout();
+		AffinityManager.getInstance().dumpLayout();
 	}
 
 	@Test
@@ -32,7 +32,7 @@ public class AffinityManagerTest {
 			NumaCpuLayout nLayout = (NumaCpuLayout) layout;
 			for (NumaNode node : nLayout.getNodes()) {
 				System.out.println( "binding to node " + node);
-				boolean success = AffinityManager.INSTANCE.bindToNode(node.getId());
+				boolean success = AffinityManager.getInstance().bindToNode(node.getId());
 				Assert.assertTrue( "can not bind node " + node.getId(), success);
 			}
 		}
@@ -42,7 +42,7 @@ public class AffinityManagerTest {
 				if ( i == 0) {
 					System.out.println("binding to socket " + socket);
 				}
-				boolean success = AffinityManager.INSTANCE.bindToSocket(socket);
+				boolean success = AffinityManager.getInstance().bindToSocket(socket);
 				Assert.assertTrue("can not bind socket " + socket + " in round " + i, success);
 			}
 		}
@@ -52,7 +52,7 @@ public class AffinityManagerTest {
 				if ( i == 0) {
 					System.out.println("binding to core " + core);
 				}
-				boolean success = AffinityManager.INSTANCE.bindToCore(core.getId());
+				boolean success = AffinityManager.getInstance().bindToCore(core.getId());
 				Assert.assertTrue("can not bind core " + core.getId(), success);
 			}
 		}
@@ -64,7 +64,7 @@ public class AffinityManagerTest {
 					if ( i == 0) {
 						System.out.println("binding to cache " + cache);
 					}
-					boolean success = AffinityManager.INSTANCE.bindToCache( cache.getId());
+					boolean success = AffinityManager.getInstance().bindToCache( cache.getId());
 					Assert.assertTrue("can not bind cache " + cache + " (" + i + ")", success);
 				}
 			}
@@ -72,7 +72,7 @@ public class AffinityManagerTest {
 		// must not bind for other ids
 		final int wrongSocketId = layout.sockets() + 1;
 		System.out.println( "not binding to socket " + wrongSocketId);
-		boolean success = AffinityManager.INSTANCE.bindToSocket(wrongSocketId);
+		boolean success = AffinityManager.getInstance().bindToSocket(wrongSocketId);
 		Assert.assertFalse( "bound to non-existing socket " + wrongSocketId, success);
 
 	}
@@ -80,7 +80,7 @@ public class AffinityManagerTest {
 	@Test
 	public void testBoundTo() {
 		// Nodes
-		final AffinityManager am = AffinityManager.INSTANCE;
+		final AffinityManager am = AffinityManager.getInstance();
 		if ( layout instanceof GroupedCpuLayout) {
 			GroupedCpuLayout gLayout = (GroupedCpuLayout) layout;
 			for (Group group : gLayout.getGroups()) {

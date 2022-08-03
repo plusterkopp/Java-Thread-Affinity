@@ -100,7 +100,7 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
         synchronized (threads) {
             threads.add(t);
         }
-        AffinityManager.INSTANCE.unregisterFromOthers(this, t);
+        AffinityManager.getInstance().unregisterFromOthers(this, t);
     }
 
     /**
@@ -164,7 +164,7 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
     }
 
     private int getGroupSize() {
-        CpuLayout cpuLayout = AffinityManager.INSTANCE.getLayout();
+        CpuLayout cpuLayout = AffinityManager.getInstance().getLayout();
         if ( cpuLayout instanceof GroupedCpuLayout) {
             GroupedCpuLayout groupLayout = (GroupedCpuLayout) cpuLayout;
             int groupId = groupAffinityMask.getGroupId();

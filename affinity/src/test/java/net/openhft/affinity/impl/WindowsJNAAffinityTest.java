@@ -18,7 +18,7 @@ package net.openhft.affinity.impl;
 
 import com.sun.jna.platform.win32.*;
 import net.openhft.affinity.*;
-import net.openhft.affinity.impl.LayoutEntities.Cache;
+import net.openhft.affinity.impl.LayoutEntities.*;
 import org.junit.*;
 
 import java.text.*;
@@ -148,7 +148,7 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 		WindowsCpuLayout    cpuLayout = (WindowsCpuLayout) WinImpl.getDefaultLayout();
 		int index = WinImpl.getCpu();
 		WindowsCpuInfo current = cpuLayout.lCpu(index);
-		System.out.println("running on #" + index + ": " + current);
+		System.out.println("running on #" + index + ": " + current + " enc " + System.getProperty( "file.encoding"));
 		NumberFormat    nf = DecimalFormat.getNumberInstance();
 		nf.setGroupingUsed( true);
 		nf.setMaximumFractionDigits( 3);

@@ -1,7 +1,7 @@
 package net.openhft.affinity;
 
-import net.openhft.affinity.impl.LayoutEntities.*;
 import net.openhft.affinity.impl.*;
+import net.openhft.affinity.impl.LayoutEntities.*;
 import org.slf4j.*;
 
 import java.io.*;
@@ -13,31 +13,98 @@ import java.util.function.*;
  * Created by rhelbing on 07.10.2015.
  */
 public class AffinityManager {
+
+	private static class AffinityManagerHolder {
+		static final AffinityManager instance = new AffinityManager();
+	}
+
+	// public static final AffinityManager INSTANCE = new AffinityManager();
+
+	public static AffinityManager getInstance() {
+		return AffinityManagerHolder.instance;
+	}
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(AffinityManager.class);
-	public static final AffinityManager INSTANCE = new AffinityManager();
 
 	final private CpuLayout   cpuLayout;
 
 	private AffinityManager() {
-		cpuLayout = getLayout();
+		cpuLayout = initLayout();
+	}
+
+	// initializing the layout may occasionally throw spurious errors, very hard to reproduce
+//	Caused by: java.lang.Error: Invalid memory access
+//	at com.sun.jna.Native.read(Native Method) ~[jna-5.12.1.jar:5.12.1 (b0)]
+//	at com.sun.jna.Pointer.read(Pointer.java:140) ~[jna-5.12.1.jar:5.12.1 (b0)]
+//	at com.sun.jna.Pointer.readArray(Pointer.java:464) ~[jna-5.12.1.jar:5.12.1 (b0)]
+//	at com.sun.jna.Pointer.getValue(Pointer.java:450) ~[jna-5.12.1.jar:5.12.1 (b0)]
+//	at com.sun.jna.Structure.readField(Structure.java:746) ~[jna-5.12.1.jar:5.12.1 (b0)]
+//	at com.sun.jna.Structure.read(Structure.java:605) ~[jna-5.12.1.jar:5.12.1 (b0)]
+//	at com.sun.jna.Structure.autoRead(Structure.java:2260) ~[jna-5.12.1.jar:5.12.1 (b0)]
+//	at com.sun.jna.Structure.conditionalAutoRead(Structure.java:576) ~[jna-5.12.1.jar:5.12.1 (b0)]
+//	at com.sun.jna.Structure.toArray(Structure.java:1654) ~[jna-5.12.1.jar:5.12.1 (b0)]
+//	at com.sun.jna.Structure.toArray(Structure.java:1675) ~[jna-5.12.1.jar:5.12.1 (b0)]
+//	at com.sun.jna.Pointer.readArray(Pointer.java:506) ~[jna-5.12.1.jar:5.12.1 (b0)]
+//	at com.sun.jna.Pointer.getValue(Pointer.java:450) ~[jna-5.12.1.jar:5.12.1 (b0)]
+//	at com.sun.jna.Structure.readField(Structure.java:746) ~[jna-5.12.1.jar:5.12.1 (b0)]
+//	at com.sun.jna.Structure.read(Structure.java:605) ~[jna-5.12.1.jar:5.12.1 (b0)]
+//	at com.sun.jna.Pointer.getValue(Pointer.java:370) ~[jna-5.12.1.jar:5.12.1 (b0)]
+//	at com.sun.jna.Structure.readField(Structure.java:746) ~[jna-5.12.1.jar:5.12.1 (b0)]
+//	at com.sun.jna.Union.readField(Union.java:223) ~[jna-5.12.1.jar:5.12.1 (b0)]
+//	at com.sun.jna.Structure.read(Structure.java:605) ~[jna-5.12.1.jar:5.12.1 (b0)]
+//	at net.openhft.affinity.impl.WindowsJNAAffinity$SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX.read(WindowsJNAAffinity.java:355) ~[affinity-3.4.jar:?]
+//	at net.openhft.affinity.impl.WindowsJNAAffinity$SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX.<init>(WindowsJNAAffinity.java:329) ~[affinity-3.4.jar:?]
+//	at net.openhft.affinity.impl.WindowsJNAAffinity$SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX$ByReference.<init>(WindowsJNAAffinity.java:421) ~[affinity-3.4.jar:?]
+//	at jdk.internal.reflect.GeneratedConstructorAccessor27.newInstance(Unknown Source) ~[?:?]
+//	at jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45) ~[?:?]
+//	at java.lang.reflect.Constructor.newInstance(Constructor.java:490) ~[?:?]
+//	at com.sun.jna.Structure.newInstance(Structure.java:1871) ~[jna-5.12.1.jar:5.12.1 (b0)]
+//	at com.sun.jna.Structure.updateStructureByReference(Structure.java:703) ~[jna-5.12.1.jar:5.12.1 (b0)]
+//	at com.sun.jna.Pointer.getValue(Pointer.java:367) ~[jna-5.12.1.jar:5.12.1 (b0)]
+//	at com.sun.jna.Structure.readField(Structure.java:746) ~[jna-5.12.1.jar:5.12.1 (b0)]
+//	at com.sun.jna.Structure.read(Structure.java:605) ~[jna-5.12.1.jar:5.12.1 (b0)]
+//	at com.sun.jna.Structure.autoRead(Structure.java:2260) ~[jna-5.12.1.jar:5.12.1 (b0)]
+//	at com.sun.jna.Structure.conditionalAutoRead(Structure.java:576) ~[jna-5.12.1.jar:5.12.1 (b0)]
+//	at com.sun.jna.Structure.toArray(Structure.java:1654) ~[jna-5.12.1.jar:5.12.1 (b0)]
+//	at com.sun.jna.Structure.toArray(Structure.java:1675) ~[jna-5.12.1.jar:5.12.1 (b0)]
+//	at net.openhft.affinity.impl.WindowsJNAAffinity$PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX_ARR.toArray(WindowsJNAAffinity.java:452) ~[affinity-3.4.jar:?]
+//	at net.openhft.affinity.impl.WindowsJNAAffinity.getLogicalProcessorInformation(WindowsJNAAffinity.java:634) ~[affinity-3.4.jar:?]
+//	at net.openhft.affinity.impl.WindowsJNAAffinity.getLogicalProcessorInformation(WindowsJNAAffinity.java:627) ~[affinity-3.4.jar:?]
+//	at net.openhft.affinity.impl.WindowsJNAAffinity$1.getDefaultLayout(WindowsJNAAffinity.java:45) ~[affinity-3.4.jar:?]
+//	at net.openhft.affinity.AffinityManager.getLayout(AffinityManager.java:30) ~[affinity-3.4.jar:?]
+//	at net.openhft.affinity.AffinityManager.<init>(AffinityManager.java:22) ~[affinity-3.4.jar:?]
+//	at net.openhft.affinity.AffinityManager.<clinit>(AffinityManager.java:17) ~[affinity-3.4.jar:?]
+
+	private CpuLayout initLayout() {
+		int count = 0;
+		CpuLayout fallbackLayout = new NoCpuLayout(Runtime.getRuntime().availableProcessors());
+		// try to guard against spurios JNA Errors shown above. In that case, we retry up to 3 times
+		while ( ++count <= 3) {
+			try {
+				CpuLayout layout = fallbackLayout;
+				IAffinity impl = Affinity.getAffinityImpl();
+				if (impl instanceof IDefaultLayoutAffinity) {
+					IDefaultLayoutAffinity dla = (IDefaultLayoutAffinity) impl;
+					layout = dla.getDefaultLayout();
+				} else {
+					if (new File("/proc/cpuinfo").exists()) {
+						try {
+							layout = VanillaCpuLayout.fromCpuInfo();
+						} catch (Exception e) {
+							LOGGER.warn("Unable to load /proc/cpuinfo", e);
+						}
+					}
+				}
+				return layout;
+			} catch ( Throwable t) {
+				LOGGER.error( "can not initialize layout round " + count, t);
+			}
+		}
+		return fallbackLayout;
 	}
 
 	public CpuLayout getLayout() {
-		CpuLayout layout = new NoCpuLayout(Runtime.getRuntime().availableProcessors());
-		IAffinity impl = Affinity.getAffinityImpl();
-		if (impl instanceof IDefaultLayoutAffinity) {
-			IDefaultLayoutAffinity dla = (IDefaultLayoutAffinity) impl;
-			layout = dla.getDefaultLayout();
-		} else {
-			if (new File("/proc/cpuinfo").exists()) {
-				try {
-					layout = VanillaCpuLayout.fromCpuInfo();
-				} catch (Exception e) {
-					LOGGER.warn("Unable to load /proc/cpuinfo", e);
-				}
-			}
-		}
-		return layout;
+		return cpuLayout;
 	}
 
 	/**
