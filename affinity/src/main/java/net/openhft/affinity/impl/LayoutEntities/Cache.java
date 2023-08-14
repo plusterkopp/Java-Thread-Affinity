@@ -135,7 +135,33 @@ public class Cache extends LayoutEntity {
                 .toArray();
     }
 
+    /**
+     * check if size is larger than 1T, 1G, 1M or 1K. Divide by that unit size to obtain the number of T, G,
+     * M, K or just B. Ignore any remainder.
+     *
+     * @param size
+     * @param sb
+     */
+    public static void printSizeToSB( long size, StringBuilder sb) {
+        long	sizesA[] = { 1L << 40, 1L << 30, 1L << 20, 1L << 10};
+        char	suffixesA[] = { 'T', 'G', 'M', 'K'};
+
+        for ( int i = 0;  i < sizesA.length;  i++) {
+            long limit = sizesA[ i];
+            if ( size > limit) {
+                long multiple = size / limit;
+                sb.append( multiple).append( suffixesA[ i]);
+                return;
+            }
+        }
+        sb.append( size).append( 'B');
+    }
+
     public String toString() {
+        StringBuilder sb = new StringBuilder( 100);
+        sb.append( "L").append( level).append( getType().shortName()).append( " (");
+        Cache.printSizeToSB( size, sb);
+        sb.append( ") ").append( super.toString());
         return "" + level + " " + super.toString(); //  + " L" + level + " " + type.shortName();
     }
 }
