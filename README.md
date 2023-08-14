@@ -13,7 +13,9 @@ When I started this work, the only relevant machines had Intel CPUs, where relat
 
 Enter AMD Zen.
 
-Now with an Epyc 7301, two cores are organized into core complexes which each have their own L3 cache. Two core complexes form a numa node. Each socket has four of them. There is no longer a simple 1:1 mapping of socket to numa node and L3 cache. Using only naive socket binding on a hardware like this yields huge performance losses.
+Now with an Epyc 7301, two cores are organized into core complexes which each have their own L3 cache. Two core complexes form a numa node. Each socket has four of them. There is no longer a simple 1:1 mapping of socket to numa node and L3 cache. Using only naive socket binding on a hardware like this yields huge performance losses. 
+
+Unfortunately, Linux currently does not provide the same one-stop introspection API as Windows. 
 
 Caches do not execute code, and are therefore not referenced in `CpuInfo`s. Instead, they form their own hierarchy. We can only relate `LayoutEntities` (including caches) to each other by their mask.
 
@@ -41,6 +43,6 @@ Not contained in this package is how to bind worker threads in a pool. Since thi
 
 To use these threads, `ThreadPool`s need a custom `ThreadFactory` that creates `AffinityThread`s.
 
-Usually, I do not unbind or rebind threads after they have been initially bound. This is however possible and covered in unit tests.
+Usually, I do not unbind or rebind threads after they have been initially bound. However, this is possible and covered in unit tests.
 
-I would like to see this fork somehow remerged back into the original package if my use case becomes more relevant to the people maintaining it. If I should add more comments to my already totally self-explanatory core to help this effort, please contact me.
+I would like to see this fork somehow remerged back into the original package if my use case becomes more relevant to the people maintaining it. If I need to add more comments to my already totally self-explanatory code to help this effort, please contact me.
