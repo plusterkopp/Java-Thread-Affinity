@@ -88,8 +88,8 @@ public enum HwLocJNAAffinity implements IAffinity, IDefaultLayoutAffinity {
                 if (trimmed.startsWith("Machine")) {
                     continue;
                 }
-                if (trimmed.contains("depth ")) {
-                    continue;
+                if (trimmed.startsWith("depth 0:")) {
+                    break;
                 }
                 int lID = parseId(trimmed, "L");
                 if (trimmed.startsWith("NUMANode")) {
