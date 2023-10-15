@@ -30,6 +30,11 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
 		bitsetMask = m;
 	}
 
+	protected LayoutEntity( int id) {
+		this( new BitSet());
+		setId( id);
+	}
+
 	/**
      * using the mask, call the consumer with each index in the bitset that is set and has matching group (assuming infos with same group ID are consecutive)
      *

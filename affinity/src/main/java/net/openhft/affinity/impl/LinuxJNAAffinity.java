@@ -50,7 +50,6 @@ public enum LinuxJNAAffinity implements IAffinity, IDefaultLayoutAffinity {
     private static final Logger LOGGER = LoggerFactory.getLogger(LinuxJNAAffinity.class);
     public static final boolean LOADED;
 
-    // TODO: FIXME!!! CHANGE IAffinity TO SUPPORT PLATFORMS WITH 64+ CORES FIXME!!!
     @Override
     public BitSet getAffinity() {
         final LinuxHelper.cpu_set_t cpuset = LinuxHelper.sched_getaffinity();

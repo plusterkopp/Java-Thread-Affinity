@@ -23,6 +23,10 @@ public class Core extends LayoutEntity {
         super( mask);
     }
 
+    public Core( int id) {
+        super( id);
+    }
+
     public void setSocket(Socket socket) {
         this.socket = socket;
     }

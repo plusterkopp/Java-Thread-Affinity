@@ -116,7 +116,7 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 		        final ICpuInfo cpuInfo = cpuInfos.get(pos);
 		        if ( cpuInfo instanceof INumaCpuInfo) {
 			        INumaCpuInfo ni = (INumaCpuInfo) cpuInfo;
-			        ni.setNodeId( n.getId());
+			        ni.setNode( n);
 		        }
 	        });
 	    }
@@ -295,7 +295,7 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 		long[] retValA = { -1};
 		cachesIntersecting(cpuId)
 				.filter(cache -> cache.getLevel() == level)
-				.filter(cache -> cache.getType() != CacheType.INSTRUCTION)
+				.filter(cache -> cache.getType() != Cache.CacheType.INSTRUCTION)
 				.findFirst()
 				.ifPresent( cache -> retValA[ 0] = getter.apply( cache));
 		return retValA[ 0];
@@ -310,8 +310,8 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 		return retValA[ 0];
 	}
 
-	private CacheCpuLayout.CacheType getCacheInfoCT(int cpuId, int level, Function<Cache, CacheCpuLayout.CacheType> getter) {
-		CacheCpuLayout.CacheType[] retValA = new CacheType[ 1];
+	private Cache.CacheType getCacheInfoCT(int cpuId, int level, Function<Cache, Cache.CacheType> getter) {
+		Cache.CacheType[] retValA = new Cache.CacheType[ 1];
 		cachesIntersecting(cpuId)
 				.filter(cache -> cache.getLevel() == level)
 				.findFirst()
@@ -373,17 +373,17 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 	}
 
 	@Override
-	public CacheType l1Type(int cpuId) {
+	public Cache.CacheType l1Type(int cpuId) {
 		return getCacheInfoCT( cpuId, 1, Cache::getType);
 	}
 
 	@Override
-	public CacheType l2Type(int cpuId) {
+	public Cache.CacheType l2Type(int cpuId) {
 		return getCacheInfoCT( cpuId, 2, Cache::getType);
 	}
 
 	@Override
-	public CacheType l3Type(int cpuId) {
+	public Cache.CacheType l3Type(int cpuId) {
 		return getCacheInfoCT( cpuId, 3, Cache::getType);
 	}
 

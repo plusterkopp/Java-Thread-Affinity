@@ -14,6 +14,10 @@ public class Socket extends LayoutEntity {
         super(m);
     }
 
+    public Socket( int id) {
+        super( id);
+    }
+
     public Socket(BitSet bitmask) {
         super( bitmask);
     }

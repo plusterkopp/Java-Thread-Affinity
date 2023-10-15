@@ -1,33 +1,10 @@
 package net.openhft.affinity;
 
-import com.sun.jna.platform.win32.WinNT;
 import net.openhft.affinity.impl.LayoutEntities.Cache;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public interface CacheCpuLayout {
-
-    public enum CacheType {
-        DATA, INSTRUCTION, TRACE, UNIFIED;
-
-        public static CacheType getInstance(byte type) {
-            if ( type == WinNT.PROCESSOR_CACHE_TYPE.CacheData) {
-                return DATA;
-            } else if( type == WinNT.PROCESSOR_CACHE_TYPE.CacheInstruction) {
-                return INSTRUCTION;
-            } else if( type == WinNT.PROCESSOR_CACHE_TYPE.CacheTrace) {
-                return TRACE;
-            } else if( type == WinNT.PROCESSOR_CACHE_TYPE.CacheUnified) {
-                return UNIFIED;
-            }
-            return null;
-        }
-
-        public char shortName() {
-            return name().charAt( 0);
-        }
-    }
 
     /**
      * @param cpuId
@@ -77,9 +54,9 @@ public interface CacheCpuLayout {
      */
     byte l3Associativity(int cpuId);
 
-    CacheType l1Type( int cpuId);
-    CacheType l2Type( int cpuId);
-    CacheType l3Type( int cpuId);
+    Cache.CacheType l1Type(int cpuId);
+    Cache.CacheType l2Type(int cpuId);
+    Cache.CacheType l3Type(int cpuId);
 
     Cache getCache( int cpuId, int level);
 

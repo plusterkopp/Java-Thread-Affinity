@@ -1,19 +1,37 @@
 package net.openhft.affinity.impl.LayoutEntities;
 
 import com.sun.jna.platform.win32.WinDef;
+import com.sun.jna.platform.win32.WinNT;
 import net.openhft.affinity.CpuLayout;
-import net.openhft.affinity.CacheCpuLayout;
 import net.openhft.affinity.impl.GroupAffinityMask;
 import net.openhft.affinity.impl.WindowsCpuLayout;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class Cache extends LayoutEntity {
+
+    public enum CacheType {
+        DATA, INSTRUCTION, TRACE, UNIFIED;
+
+        public static CacheType getWindowsInstance(byte type) {
+            if (type == WinNT.PROCESSOR_CACHE_TYPE.CacheData) {
+                return DATA;
+            } else if (type == WinNT.PROCESSOR_CACHE_TYPE.CacheInstruction) {
+                return INSTRUCTION;
+            } else if (type == WinNT.PROCESSOR_CACHE_TYPE.CacheTrace) {
+                return TRACE;
+            } else if (type == WinNT.PROCESSOR_CACHE_TYPE.CacheUnified) {
+                return UNIFIED;
+            }
+            return null;
+        }
+
+        public char shortName() {
+            return name().charAt(0);
+        }
+    }
 
     static final byte FULL = (byte) 0xFF;
     private byte associativity;
-    private CacheCpuLayout.CacheType type;
+    private CacheType type;
     private long size;
     private byte level;
     private short lineSize;
@@ -23,6 +41,26 @@ public class Cache extends LayoutEntity {
 
     public Cache(int group, long mask) {
         super(group, mask);
+    }
+
+    public Cache(int id, long size, byte level, short lineSize, byte associativity, CacheType type) {
+        super(id);
+        setSize(size);
+        setLevel(level);
+        setLineSize(lineSize);
+        setType(type);
+    }
+
+    private void setType(CacheType t) {
+        type = t;
+    }
+
+    private void setLineSize(short ls) {
+        lineSize = ls;
+    }
+
+    private void setSize(long s) {
+        size = s;
     }
 
     /**
@@ -42,7 +80,7 @@ public class Cache extends LayoutEntity {
     }
 
     public void setType(byte t) {
-        type = CacheCpuLayout.CacheType.getInstance( t);
+        type = CacheType.getWindowsInstance(t);
     }
 
     public void setAssociativity(byte a) {
@@ -119,7 +157,7 @@ public class Cache extends LayoutEntity {
         return associativity;
     }
 
-    public CacheCpuLayout.CacheType getType() {
+    public CacheType getType() {
         return type;
     }
 
@@ -160,8 +198,10 @@ public class Cache extends LayoutEntity {
     public String toString() {
         StringBuilder sb = new StringBuilder( 100);
         sb.append( "L").append( level).append( getType().shortName()).append( " (");
-        Cache.printSizeToSB( size, sb);
+        printSizeToSB(size, sb);
         sb.append( ") ").append( super.toString());
-        return "" + level + " " + super.toString(); //  + " L" + level + " " + type.shortName();
+        return sb.toString();
+        // return "" + level + " " + super.toString(); //  + " L" + level + " " + type.shortName();
     }
+
 }

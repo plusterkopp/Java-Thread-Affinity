@@ -1,27 +1,18 @@
 package net.openhft.affinity.impl;
 
 import net.openhft.affinity.*;
+import net.openhft.affinity.impl.LayoutEntities.NumaNode;
 import org.jetbrains.annotations.*;
 
 /**
  * add numaId, groupId
  */
 class WindowsCpuInfo extends VanillaCpuInfo implements IGroupCpuInfo, INumaCpuInfo {
-	private int numaId = 0;
+	private NumaNode node = null;
 	private int groupId = 0;
 	private long mask = 0;
 
 	WindowsCpuInfo() {}
-
-	WindowsCpuInfo(int socketId, int coreId, int threadId) {
-		this( socketId, coreId, threadId, 0, 0);
-	}
-
-	WindowsCpuInfo(int socketId, int coreId, int threadId, int numaId, int groupId) {
-		super( socketId, coreId, threadId);
-		this.numaId = numaId;
-		this.groupId = groupId;
-	}
 
 	@NotNull
 	@Override
@@ -30,7 +21,7 @@ class WindowsCpuInfo extends VanillaCpuInfo implements IGroupCpuInfo, INumaCpuIn
 				" s" + getSocketId() +
 				" c" + getCoreId() +
 				" t" + getThreadId() +
-				" n" + numaId +
+				" n" + getNodeId() +
 				" g" + groupId +
 				" m" + WindowsJNAAffinity.asBitSet(mask) +
 				'}';
@@ -44,7 +35,7 @@ class WindowsCpuInfo extends VanillaCpuInfo implements IGroupCpuInfo, INumaCpuIn
 		WindowsCpuInfo cpuInfo = (WindowsCpuInfo) o;
 
 		if (groupId != cpuInfo.groupId) return false;
-		if (numaId != cpuInfo.numaId) return false;
+		if (getNodeId() != cpuInfo.getNodeId()) return false;
 		if (getCoreId() != cpuInfo.getCoreId()) return false;
 		if (getSocketId() != cpuInfo.getSocketId()) return false;
 		return getThreadId() == cpuInfo.getThreadId();
@@ -54,7 +45,7 @@ class WindowsCpuInfo extends VanillaCpuInfo implements IGroupCpuInfo, INumaCpuIn
 	@Override
 	public int hashCode() {
 		int result = groupId;
-		result = 31 * result + numaId;
+		result = 31 * result + getNodeId();
 		result = 31 * result + getSocketId();
 		result = 31 * result + getCoreId();
 		result = 71 * result + getThreadId();
@@ -67,11 +58,11 @@ class WindowsCpuInfo extends VanillaCpuInfo implements IGroupCpuInfo, INumaCpuIn
 
 
 	public int getNodeId() {
-		return numaId;
+		return node.getId();
 	}
 
-	public void setNodeId(int numaId) {
-		this.numaId = numaId;
+	public void setNode(NumaNode n) {
+		node = n;
 	}
 
 	public int getGroupId() {

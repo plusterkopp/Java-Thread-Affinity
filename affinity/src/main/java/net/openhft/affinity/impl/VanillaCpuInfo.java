@@ -1,11 +1,13 @@
 package net.openhft.affinity.impl;
 
-import org.jetbrains.annotations.*;
+import net.openhft.affinity.ICpuInfo;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Created by rhelbing on 07.10.2015.
  */
-class VanillaCpuInfo implements net.openhft.affinity.ICpuInfo {
+class VanillaCpuInfo implements ICpuInfo {
     private int socketId;
     /** local to socketId */
     private int coreId;

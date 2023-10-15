@@ -1,12 +1,16 @@
 package net.openhft.affinity;
 
-import net.openhft.affinity.impl.*;
+import net.openhft.affinity.impl.GroupAffinityMask;
 import net.openhft.affinity.impl.LayoutEntities.*;
-import org.slf4j.*;
+import net.openhft.affinity.impl.NoCpuLayout;
+import net.openhft.affinity.impl.VanillaCpuLayout;
+import net.openhft.affinity.impl.WindowsCpuLayout;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.File;
 import java.util.*;
-import java.util.function.*;
+import java.util.function.Consumer;
 
 
 /**
@@ -226,18 +230,18 @@ public class AffinityManager {
 		return false;
 	}
 
-	public boolean bindToCache(int cacheId) {
-		if ( cpuLayout instanceof CacheCpuLayout) {
-			CacheCpuLayout l = (CacheCpuLayout) cpuLayout;
-			try {
-				Cache cache = l.getCaches().get(cacheId);
-				return bindToCache( cache);
-			} catch ( IndexOutOfBoundsException e) {
-				return false;
-			}
-		}
-		return false;
-	}
+//	public boolean bindToCache(int cacheId) {
+//		if ( cpuLayout instanceof CacheCpuLayout) {
+//			CacheCpuLayout l = (CacheCpuLayout) cpuLayout;
+//			try {
+//				Cache cache = l.getCaches().get(cacheId);
+//				return bindToCache( cache);
+//			} catch ( IndexOutOfBoundsException e) {
+//				return false;
+//			}
+//		}
+//		return false;
+//	}
 
 	public boolean bindToCache(Cache cache) {
 		if ( cpuLayout instanceof CacheCpuLayout) {
@@ -313,7 +317,6 @@ public class AffinityManager {
 
 	public List<LayoutEntity> getBoundTo(Thread thread) {
 		if ( cpuLayout instanceof VanillaCpuLayout) {
-			VanillaCpuLayout wcpul = (VanillaCpuLayout) cpuLayout;
 			List<LayoutEntity> result = new ArrayList<>(1);
 			Consumer<LayoutEntity> addIfHasThread = (entity) -> {
 				List<Thread> entityThreads = entity.getThreads();

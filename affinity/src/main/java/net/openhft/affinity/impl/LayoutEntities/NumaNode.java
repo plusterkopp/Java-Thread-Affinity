@@ -15,6 +15,10 @@ public class NumaNode extends LayoutEntity {
         super(index, mask);
     }
 
+    public NumaNode( int id) {
+        super( id);
+    }
+
     public String toString() {
         return "N " + super.toString();
     }

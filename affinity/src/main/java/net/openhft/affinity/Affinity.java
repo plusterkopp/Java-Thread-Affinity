@@ -33,46 +33,48 @@ import java.util.BitSet;
  */
 public enum Affinity {
     ;
-    static final Logger LOGGER = LoggerFactory.getLogger(Affinity.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Affinity.class);
     @NotNull
-    private static final IAffinity AFFINITY_IMPL;
+    private static final IAffinity AFFINITY_IMPL = initImpl();
     private static Boolean JNAAvailable;
 
-    static {
+    private static IAffinity initImpl() {
         String osName = System.getProperty("os.name");
         if (osName.contains("Win") && isWindowsJNAAffinityUsable()) {
             LOGGER.trace("Using Windows JNA-based affinity control implementation");
-            AFFINITY_IMPL = WindowsJNAAffinity.INSTANCE;
-
-        } else if (osName.contains("x")) {
-            /*if (osName.startsWith("Linux") && NativeAffinity.LOADED) {
-                LOGGER.trace("Using Linux JNI-based affinity control implementation");
-                AFFINITY_IMPL = NativeAffinity.INSTANCE;
-            } else*/
-            if (osName.startsWith("Linux") && isLinuxJNAAffinityUsable()) {
-                LOGGER.trace("Using Linux JNA-based affinity control implementation");
-                AFFINITY_IMPL = LinuxJNAAffinity.INSTANCE;
-
-            } else if (isPosixJNAAffinityUsable()) {
-                LOGGER.trace("Using Posix JNA-based affinity control implementation");
-                AFFINITY_IMPL = PosixJNAAffinity.INSTANCE;
-
-            } else {
-                LOGGER.info("Using dummy affinity control implementation");
-                AFFINITY_IMPL = NullAffinity.INSTANCE;
-            }
-        } else if (osName.contains("Mac") && isMacJNAAffinityUsable()) {
-            LOGGER.trace("Using MAC OSX JNA-based thread id implementation");
-            AFFINITY_IMPL = OSXJNAAffinity.INSTANCE;
-
-        } else if (osName.contains("SunOS") && isSolarisJNAAffinityUsable()) {
-            LOGGER.trace("Using Solaris JNA-based thread id implementation");
-            AFFINITY_IMPL = SolarisJNAAffinity.INSTANCE;
-
-        } else {
-            LOGGER.info("Using dummy affinity control implementation");
-            AFFINITY_IMPL = NullAffinity.INSTANCE;
+            return WindowsJNAAffinity.INSTANCE;
         }
+	    if (osName.contains("x")) {
+	        /*if (osName.startsWith("Linux") && NativeAffinity.LOADED) {
+	            LOGGER.trace("Using Linux JNI-based affinity control implementation");
+	            AFFINITY_IMPL = NativeAffinity.INSTANCE;
+	        } else*/
+	        if (osName.startsWith("Linux")) {
+	            if ( isHwLocAffinityUsable()) {
+	                LOGGER.trace("Using hwloc text-based affinity control implementation");
+	                return HwLocJNAAffinity.INSTANCE;
+	            }
+		        if ( isLinuxJNAAffinityUsable()) {
+		            LOGGER.trace("Using Linux JNA-based affinity control implementation");
+		            return LinuxJNAAffinity.INSTANCE;
+		        }
+	        } else if (isPosixJNAAffinityUsable()) {
+	            LOGGER.trace("Using Posix JNA-based affinity control implementation");
+	            return PosixJNAAffinity.INSTANCE;
+	        } else {
+	            LOGGER.info("Using dummy affinity control implementation");
+	            return NullAffinity.INSTANCE;
+	        }
+	    } else if (osName.contains("Mac") && isMacJNAAffinityUsable()) {
+	        LOGGER.trace("Using MAC OSX JNA-based thread id implementation");
+	        return OSXJNAAffinity.INSTANCE;
+
+	    } else if (osName.contains("SunOS") && isSolarisJNAAffinityUsable()) {
+		    LOGGER.trace("Using Solaris JNA-based thread id implementation");
+		    return SolarisJNAAffinity.INSTANCE;
+	    }
+	    LOGGER.info("Using dummy affinity control implementation");
+	    return NullAffinity.INSTANCE;
     }
 
     public static IAffinity getAffinityImpl() {
@@ -87,10 +89,9 @@ public enum Affinity {
                 logThrowable(t, "Windows JNA-based affinity not usable because it failed to load!");
                 return false;
             }
-        } else {
-            LOGGER.warn("Windows JNA-based affinity not usable due to JNA not being available!");
-            return false;
         }
+	    LOGGER.warn("Windows JNA-based affinity not usable due to JNA not being available!");
+	    return false;
     }
 
     private static boolean isPosixJNAAffinityUsable() {
@@ -101,10 +102,22 @@ public enum Affinity {
                 logThrowable(t, "Posix JNA-based affinity not usable because it failed to load!");
                 return false;
             }
-        } else {
-            LOGGER.warn("Posix JNA-based affinity not usable due to JNA not being available!");
-            return false;
         }
+	    LOGGER.warn("Posix JNA-based affinity not usable due to JNA not being available!");
+	    return false;
+    }
+
+    private static boolean isHwLocAffinityUsable() {
+        if (isJNAAvailable()) {
+            try {
+                return HwLocJNAAffinity.LOADED;
+            } catch (Throwable t) {
+                logThrowable(t, "HwLoc affinity not usable because it failed to load!");
+                return false;
+            }
+        }
+	    LOGGER.warn("HwLoc affinity not usable due to JNA not being available!");
+	    return false;
     }
 
     private static boolean isLinuxJNAAffinityUsable() {
@@ -115,30 +128,27 @@ public enum Affinity {
                 logThrowable(t, "Linux JNA-based affinity not usable because it failed to load!");
                 return false;
             }
-        } else {
-            LOGGER.warn("Linux JNA-based affinity not usable due to JNA not being available!");
-            return false;
         }
+	    LOGGER.warn("Linux JNA-based affinity not usable due to JNA not being available!");
+	    return false;
     }
 
     private static boolean isMacJNAAffinityUsable() {
         if (isJNAAvailable()) {
             return true;
 
-        } else {
-            LOGGER.warn("MAX OSX JNA-based affinity not usable due to JNA not being available!");
-            return false;
         }
+	    LOGGER.warn("MAX OSX JNA-based affinity not usable due to JNA not being available!");
+	    return false;
     }
 
     private static boolean isSolarisJNAAffinityUsable() {
         if (isJNAAvailable()) {
             return true;
 
-        } else {
-            LOGGER.warn("Solaris JNA-based affinity not usable due to JNA not being available!");
-            return false;
         }
+	    LOGGER.warn("Solaris JNA-based affinity not usable due to JNA not being available!");
+	    return false;
     }
 
     private static void logThrowable(Throwable t, String description) {
