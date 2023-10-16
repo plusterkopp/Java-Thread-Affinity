@@ -56,7 +56,7 @@ public enum HwLocJNAAffinity implements IAffinity, IDefaultLayoutAffinity {
     };
 
     public static HwLocCpuLayout getCpuLayout() {
-        String[] command = {"hwloc-ls", "-v", "--no-io", "--of", "console"};
+        String[] command = {"lstopo-no-graphics", "-v", "--no-io"};
         try {
             Process hwLocProcess = Runtime.getRuntime().exec(command);
             InputStream input = hwLocProcess.getInputStream();
@@ -267,7 +267,7 @@ public enum HwLocJNAAffinity implements IAffinity, IDefaultLayoutAffinity {
         boolean loaded = false;
         try {
             INSTANCE.getAffinity();
-            loaded = true;
+            loaded = INSTANCE.getDefaultLayout() != null; // if no layout, try another Affinity Impl
         } catch (UnsatisfiedLinkError e) {
             LOGGER.warn("Unable to load jna library {}", e);
         }
