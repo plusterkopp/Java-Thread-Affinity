@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 public class HwLocCpuLayout extends VanillaCpuLayout implements NumaCpuLayout, CacheCpuLayout {
 
 	private final List<HwLocCpuInfo> cpuDetailsFull;
+	private final Map<Integer, HwLocCpuInfo> cpuDetailsByApic = new HashMap<>();
 	private final List<Cache> caches;
 	public List<NumaNode> nodes;
 
@@ -54,8 +55,8 @@ public class HwLocCpuLayout extends VanillaCpuLayout implements NumaCpuLayout, C
 				cacheSet.add(hwInfo.getL1ICache());
 				cacheSet.add(hwInfo.getL2Cache());
 				cacheSet.add(hwInfo.getL3Cache());
+				cpuDetailsByApic.put(hwInfo.getApicId(), hwInfo);
 			}
-
 		}
 		nodes = Collections.unmodifiableList(new ArrayList<>(nodeList));
 		packages = Collections.unmodifiableList(new ArrayList<>(socketList));
@@ -67,7 +68,7 @@ public class HwLocCpuLayout extends VanillaCpuLayout implements NumaCpuLayout, C
 
 	@Override
 	public int numaNodeId(int cpuId) {
-		return cpuDetailsFull.get(cpuId).getNodeId();
+		return getCPUInfo(cpuId).getNodeId();
 	}
 
 	public HwLocCpuInfo lCpu(int index) {
@@ -91,10 +92,8 @@ public class HwLocCpuLayout extends VanillaCpuLayout implements NumaCpuLayout, C
 	}
 
 	Stream<Cache> cachesIntersecting(int cpuId) {
-		HwLocCpuInfo cpuInfo = lCpu(cpuId);
-		int bit = cpuInfo.getApicId();
 		return caches.stream().
-				filter(cache -> cache.getBitMask().get(bit));
+				filter(cache -> cache.getBitMask().get(cpuId));
 	}
 
 	/**
@@ -232,6 +231,20 @@ public class HwLocCpuLayout extends VanillaCpuLayout implements NumaCpuLayout, C
 			sb.append(i).append(": ").append(cpuDetail).append('\n');
 		}
 		return sb.toString();
+	}
+
+	@Override
+	public int coreId(int cpuId) {
+		return getCPUInfo(cpuId).getCoreId();
+	}
+
+	@Override
+	public int socketId(int cpuId) {
+		return getCPUInfo(cpuId).getSocketId();
+	}
+
+	public HwLocCpuInfo getCPUInfo(int apicId) {
+		return cpuDetailsByApic.get(apicId);
 	}
 
 
