@@ -33,14 +33,11 @@ public class AffinityManagerTest {
 		// Nodes
 		if (layout instanceof NumaCpuLayout) {
 			NumaCpuLayout nLayout = (NumaCpuLayout) layout;
-			// need at least one node. If we bind to a node that has all CPU, we bind nothing at all
-			if (nLayout.getNodes().size() > 1) {
 				for (NumaNode node : nLayout.getNodes()) {
 					System.out.println("binding to node " + node);
 					boolean success = AffinityManager.getInstance().bindToNode(node.getId());
 					Assert.assertTrue("can not bind node " + node.getId(), success);
 				}
-			}
 		}
 		// Sockets, more than one loop
 		for ( int i = 0;  i < 100;  i++) {
@@ -100,7 +97,6 @@ public class AffinityManagerTest {
 		}
 		if ( layout instanceof NumaCpuLayout) {
 			NumaCpuLayout nLayout = (NumaCpuLayout) layout;
-			if (nLayout.getNodes().size() > 1) {
 				for (NumaNode node : nLayout.getNodes()) {
 					System.out.print("binding to node " + node);
 					boolean success = am.bindToNode(node);
@@ -109,7 +105,6 @@ public class AffinityManagerTest {
 					Assert.assertEquals("too many entities " + boundTo, 1, boundTo.size());
 					Assert.assertEquals("bound to another entity", node, boundTo.get(0));
 				}
-			}
 		}
 		// Sockets
 		for (Socket socket : layout.packages) {

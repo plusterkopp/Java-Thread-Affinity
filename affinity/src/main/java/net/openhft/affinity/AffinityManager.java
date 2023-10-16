@@ -218,12 +218,11 @@ public class AffinityManager {
 	}
 
 	public boolean bindToNode(NumaNode node) {
-		// implement for Windows case first, generalize when interfaces become available for VanillaLayout, too
-		if ( cpuLayout instanceof WindowsCpuLayout) {
-			WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
+		if (cpuLayout instanceof NumaCpuLayout) {
+			NumaCpuLayout layout = (NumaCpuLayout) cpuLayout;
 			node.bind();
 			int	cpuId = Affinity.getCpu();
-			if ( w.numaNodeId(cpuId) == node.getId()) {
+			if (layout.numaNodeId(cpuId) == node.getId()) {
 				return true;
 			}
 		}
@@ -261,10 +260,13 @@ public class AffinityManager {
 	public void visitEntities( Consumer<LayoutEntity> visitor) {
 		if ( cpuLayout instanceof VanillaCpuLayout) {
 			VanillaCpuLayout v = (VanillaCpuLayout) cpuLayout;
-			if (cpuLayout instanceof WindowsCpuLayout) {
-				WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
-				w.groups.forEach( visitor);
-				w.nodes.forEach( visitor);
+			if (cpuLayout instanceof GroupedCpuLayout) {
+				GroupedCpuLayout gl = (GroupedCpuLayout) cpuLayout;
+				gl.getGroups().forEach(visitor);
+			}
+			if (cpuLayout instanceof NumaCpuLayout) {
+				NumaCpuLayout nl = (NumaCpuLayout) cpuLayout;
+				nl.getNodes().forEach(visitor);
 			}
 			v.packages.forEach( visitor);
 			v.cores.forEach( visitor);
