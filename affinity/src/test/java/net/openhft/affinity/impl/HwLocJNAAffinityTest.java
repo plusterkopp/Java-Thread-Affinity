@@ -19,18 +19,17 @@ package net.openhft.affinity.impl;
 import net.openhft.affinity.Affinity;
 import net.openhft.affinity.CpuLayout;
 import net.openhft.affinity.IAffinity;
+import net.openhft.affinity.IDefaultLayoutAffinity;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.BitSet;
+import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-/**
- * @author peter.lawrey
- */
 public class HwLocJNAAffinityTest extends AbstractAffinityImplTest {
     @BeforeClass
     public static void checkJniLibraryPresent() {
@@ -66,6 +65,35 @@ public class HwLocJNAAffinityTest extends AbstractAffinityImplTest {
             assertEquals(mask, ret_mask);
         }
     }
+
+	@Test
+	public void getAffinityReturnsValuePreviouslySetRandom() {
+		final IAffinity impl = getImpl();
+		final BitSet cmask = impl.getAffinity();
+		if (impl instanceof IDefaultLayoutAffinity) {
+			IDefaultLayoutAffinity idla = (IDefaultLayoutAffinity) impl;
+			CpuLayout layout = idla.getDefaultLayout();
+			int nCPUs = layout.cpus();
+			Random rnd = new Random();
+			System.out.println("current mask: " + cmask);
+			for (int i = 0; i < 1000; i++) {
+				final BitSet mask = new BitSet();
+				for (int index = 0; index < nCPUs; index++) {
+					if (rnd.nextBoolean()) {
+						mask.set(index);
+					}
+				}
+				if (mask.isEmpty()) {   // avoid EINVAL
+					continue;
+				}
+//				System.out.print("mask → " + mask);
+				impl.setAffinity(mask);
+				final BitSet ret_mask = impl.getAffinity();
+//				System.out.println(" … " + ret_mask);
+				assertEquals(mask, ret_mask);
+			}
+		}
+	}
 
 
 }
