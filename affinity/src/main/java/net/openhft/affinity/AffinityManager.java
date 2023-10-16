@@ -203,19 +203,19 @@ public class AffinityManager {
 		return false;
 	}
 
-	public boolean bindToNode(int id) {
-		// implement for Windows case first, generalize when interfaces become available for VanillaLayout, too
-		if ( cpuLayout instanceof NumaCpuLayout) {
-			NumaCpuLayout w = (NumaCpuLayout) cpuLayout;
-			try {
-				NumaNode node = w.getNodes().get( id);
-				return bindToNode(node);
-			} catch ( IndexOutOfBoundsException e) {
-				return false;
-			}
-		}
-		return false;
-	}
+//	public boolean bindToNode(int id) {
+//		// implement for Windows case first, generalize when interfaces become available for VanillaLayout, too
+//		if ( cpuLayout instanceof NumaCpuLayout) {
+//			NumaCpuLayout w = (NumaCpuLayout) cpuLayout;
+//			try {
+//				NumaNode node = w.getNodes().get( id);
+//				return bindToNode(node);
+//			} catch ( IndexOutOfBoundsException e) {
+//				return false;
+//			}
+//		}
+//		return false;
+//	}
 
 	public boolean bindToNode(NumaNode node) {
 		if (cpuLayout instanceof NumaCpuLayout) {

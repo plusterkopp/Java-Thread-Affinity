@@ -35,8 +35,8 @@ public class AffinityManagerTest {
 			NumaCpuLayout nLayout = (NumaCpuLayout) layout;
 				for (NumaNode node : nLayout.getNodes()) {
 					System.out.println("binding to node " + node);
-					boolean success = AffinityManager.getInstance().bindToNode(node.getId());
-					Assert.assertTrue("can not bind node " + node.getId(), success);
+					boolean success = AffinityManager.getInstance().bindToNode(node);
+					Assert.assertTrue("did not bind node " + node.getId(), success);
 				}
 		}
 		// Sockets, more than one loop
@@ -46,7 +46,7 @@ public class AffinityManagerTest {
 					System.out.println("binding to socket " + socket);
 				}
 				boolean success = AffinityManager.getInstance().bindToSocket(socket);
-				Assert.assertTrue("can not bind socket " + socket + " in round " + i, success);
+				Assert.assertTrue("did not bind socket " + socket + " in round " + i, success);
 			}
 		}
 		// Cores, more than one loop
@@ -56,7 +56,7 @@ public class AffinityManagerTest {
 					System.out.println("binding to core " + core);
 				}
 				boolean success = AffinityManager.getInstance().bindToCore(core.getId());
-				Assert.assertTrue("can not bind core " + core.getId(), success);
+				Assert.assertTrue("did not bind core " + core.getId(), success);
 			}
 		}
 		if ( layout instanceof CacheCpuLayout) {
@@ -68,7 +68,7 @@ public class AffinityManagerTest {
 						System.out.println("binding to cache " + cache);
 					}
 					boolean success = AffinityManager.getInstance().bindToCache(cache);
-					Assert.assertTrue("can not bind cache " + cache + " (" + i + ")", success);
+					Assert.assertTrue("did not bind cache " + cache + " (" + i + ")", success);
 				}
 			}
 		}
