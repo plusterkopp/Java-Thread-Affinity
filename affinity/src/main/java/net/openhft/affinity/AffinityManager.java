@@ -249,7 +249,7 @@ public class AffinityManager {
 			int	cpuId = Affinity.getCpu();
 			List<Cache> caches = l.getCaches(cpuId);
 			if ( ! caches.contains( cache)) {
-				Core core = ( ( WindowsCpuLayout) cpuLayout).cores.get( cpuLayout.coreId( cpuId));
+//				Core core = ( ( WindowsCpuLayout) cpuLayout).cores.get( cpuLayout.coreId( cpuId));
 				return false;
 			}
 			return true;
