@@ -44,12 +44,12 @@ public enum HwLocJNAAffinity implements IAffinity, IDefaultLayoutAffinity {
         public CpuLayout getDefaultLayout() {
             if (DefaultLayoutAR.get() == null) {
                 HwLocCpuLayout l = null;
-                try {
+//                try {
                     l = getCpuLayout();
                     DefaultLayoutAR.compareAndSet(null, l);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
             }
             return DefaultLayoutAR.get();
         }
