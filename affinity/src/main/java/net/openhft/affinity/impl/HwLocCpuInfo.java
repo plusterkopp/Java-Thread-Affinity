@@ -3,7 +3,7 @@ package net.openhft.affinity.impl;
 import net.openhft.affinity.INumaCpuInfo;
 import net.openhft.affinity.impl.LayoutEntities.*;
 
-public class HwLocCpuInfo extends VanillaCpuInfo implements INumaCpuInfo {
+public class HwLocCpuInfo extends ApicCpuInfo implements INumaCpuInfo {
 
 	NumaNode node;
 	private Cache l1DCache;

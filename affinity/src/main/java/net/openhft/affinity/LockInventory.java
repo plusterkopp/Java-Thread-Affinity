@@ -202,7 +202,9 @@ class LockInventory {
     }
 
     protected AffinityLock newLock(int cpuId, boolean base, boolean reservable) {
-        return new AffinityLock(cpuId, base, reservable, this);
+        AffinityLock lock = new AffinityLock(cpuId, base, reservable, this);
+//        LOGGER.info( "created new lock " + lock, new Exception( "trace"));
+        return lock;
     }
 
     private void reset(CpuLayout cpuLayout) {

@@ -26,8 +26,8 @@ public class HwLocCpuLayout extends VanillaCpuLayout implements NumaCpuLayout, C
 	private final List<Cache> caches;
 	public List<NumaNode> nodes;
 
-	static private List<VanillaCpuInfo> toVanillaDetails(List<ICpuInfo> details) {
-		List<VanillaCpuInfo> vanillaDetails = new ArrayList<>(details.size());
+	static private List<ICpuInfo> toVanillaDetails(List<ICpuInfo> details) {
+		List<ICpuInfo> vanillaDetails = new ArrayList<>(details.size());
 		Map<Integer, Set<Integer>> coresToCPUs = new HashMap<>();
 		for (ICpuInfo fullInfo : details) {
 			// VanillaCPUInfo wants threadId local to coreId

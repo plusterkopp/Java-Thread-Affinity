@@ -48,4 +48,6 @@ public interface CpuLayout {
      * @return which thread on a core this cpu is on.
      */
     int threadId(int cpuId);
+
+//    ICpuInfo getCPUInfo( int cpuId);
 }

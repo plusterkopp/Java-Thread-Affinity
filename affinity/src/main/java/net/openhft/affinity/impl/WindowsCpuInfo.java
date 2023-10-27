@@ -7,7 +7,7 @@ import org.jetbrains.annotations.*;
 /**
  * add numaId, groupId
  */
-class WindowsCpuInfo extends VanillaCpuInfo implements IGroupCpuInfo, INumaCpuInfo {
+class WindowsCpuInfo extends ApicCpuInfo implements IGroupCpuInfo, INumaCpuInfo {
 	private NumaNode node = null;
 	private int groupId = 0;
 	private long mask = 0;
@@ -21,6 +21,7 @@ class WindowsCpuInfo extends VanillaCpuInfo implements IGroupCpuInfo, INumaCpuIn
 				" s" + getSocketId() +
 				" c" + getCoreId() +
 				" t" + getThreadId() +
+				" a" + getApicId() +
 				" n" + getNodeId() +
 				" g" + groupId +
 				" m" + WindowsJNAAffinity.asBitSet(mask) +

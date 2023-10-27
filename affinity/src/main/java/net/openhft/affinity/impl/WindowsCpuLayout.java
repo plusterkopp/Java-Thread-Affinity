@@ -16,12 +16,14 @@ import java.util.stream.*;
 public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout, GroupedCpuLayout, CacheCpuLayout {
 
 	private final List<WindowsCpuInfo> cpuDetailsFull;
+	private final Map<Integer, WindowsCpuInfo> cpuDetailsByApic = new HashMap<>();
+
 	public final List<Group> groups;
 	private final List<Cache> caches;
 	public List<NumaNode> nodes;
 
-	static private List<VanillaCpuInfo> toVanillaDetails( List<ICpuInfo> details) {
-		List<VanillaCpuInfo> vanillaDetails = new ArrayList<>( details.size());
+	static private List<ICpuInfo> toVanillaDetails( List<ICpuInfo> details) {
+		List<ICpuInfo> vanillaDetails = new ArrayList<>( details.size());
 		for (ICpuInfo fullInfo : details) {
 			VanillaCpuInfo vi = new VanillaCpuInfo(fullInfo.getSocketId(), fullInfo.getCoreId(), fullInfo.getThreadId());
 			vanillaDetails.add( vi);
@@ -36,7 +38,9 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 		cpuDetailsFull = new ArrayList<>( cpuDetails.size());
 		for ( ICpuInfo info: cpuDetails) {
 			if ( info instanceof WindowsCpuInfo) {
-				cpuDetailsFull.add((WindowsCpuInfo) info);
+				WindowsCpuInfo wInfo = (WindowsCpuInfo) info;
+				cpuDetailsFull.add( wInfo);
+				cpuDetailsByApic.put( wInfo.getApicId(), wInfo);
 			}
 		}
 		groups = Collections.unmodifiableList( new ArrayList<>( groupSet));
@@ -203,10 +207,11 @@ public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout,
 	 */
 	@NotNull
 	private static List<ICpuInfo> createInfoList(int size) {
-		List<ICpuInfo> cpuInfos = new ArrayList<>( size);
+		List<WindowsCpuInfo> cpuInfos = new ArrayList<>( size);
 		for ( int i = 0;  i < size;  i++) {
-			final ICpuInfo cpuInfo = new WindowsCpuInfo();
+			final WindowsCpuInfo cpuInfo = new WindowsCpuInfo();
 			cpuInfo.setThreadId( i);
+			cpuInfo.setApicId( i);
 			cpuInfos.add(cpuInfo);
 		}
 		return Collections.unmodifiableList( cpuInfos);

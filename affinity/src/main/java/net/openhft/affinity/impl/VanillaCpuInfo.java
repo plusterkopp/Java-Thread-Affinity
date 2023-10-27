@@ -7,33 +7,26 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Created by rhelbing on 07.10.2015.
  */
-class VanillaCpuInfo implements ICpuInfo {
-    private int socketId;
+public class VanillaCpuInfo implements ICpuInfo {
+    protected int socketId;
     /** local to socketId */
-    private int coreId;
+    protected int coreId;
 	/** local to socketId + coreId */
-    private int threadId;
-    private int apicid = -1;    // not set in some use cases
+    protected int threadId;
 
     VanillaCpuInfo() {
     }
 
-    VanillaCpuInfo(int socketId, int coreId, int threadId) {
+    public VanillaCpuInfo(int socketId, int coreId, int threadId) {
         this.socketId = socketId;
         this.coreId = coreId;
         this.threadId = threadId;
     }
 
-    VanillaCpuInfo(int socketId, int coreId, int threadId, int apicid) {
-        this( socketId, coreId, threadId);
-        this.apicid = apicid;
-    }
-
-    @NotNull
+     @NotNull
     @Override
     public String toString() {
         return "CpuInfo{" +
-		        ( apicid == -1 ? "" : "apicId=" + apicid + ", ") +
                 "socketId=" + socketId +
                 ", coreId=" + coreId +
                 ", threadId=" + threadId +
@@ -66,7 +59,6 @@ class VanillaCpuInfo implements ICpuInfo {
         int result = socketId;
         result = 31 * result + coreId;
         result = 31 * result + threadId;
-        result = 31 * result + apicid;
         return result;
     }
 
@@ -98,13 +90,5 @@ class VanillaCpuInfo implements ICpuInfo {
     @Override
     public void setThreadId(int threadId) {
         this.threadId = threadId;
-    }
-
-    void setApicId(int apicId) {
-        this.apicid = apicId;
-    }
-
-    public int getApicId() {
-    	return apicid;
     }
 }

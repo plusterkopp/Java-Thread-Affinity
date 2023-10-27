@@ -33,7 +33,7 @@ public class VanillaCpuLayout implements CpuLayout {
     public static final int MAX_CPUS_SUPPORTED = 64;
 
     @NotNull
-    private final List<VanillaCpuInfo> cpuDetails;
+    protected final List<ICpuInfo> cpuDetails;
     private final int sockets;
     private final int coresPerSocket;
     private final int threadsPerCore;
@@ -42,12 +42,12 @@ public class VanillaCpuLayout implements CpuLayout {
     public List<Core> cores;
 
 
-    VanillaCpuLayout(@NotNull List<VanillaCpuInfo> cpuDetails) {
+    VanillaCpuLayout(@NotNull List<ICpuInfo> cpuDetails) {
         this.cpuDetails = cpuDetails;
         SortedSet<Integer> sockets = new TreeSet<Integer>(),
                 coresSet = new TreeSet<Integer>(),
                 threads = new TreeSet<Integer>();
-        for (VanillaCpuInfo cpuDetail : cpuDetails) {
+        for (ICpuInfo cpuDetail : cpuDetails) {
             sockets.add(cpuDetail.getSocketId());
             coresSet.add((cpuDetail.getSocketId() << 16) + cpuDetail.getCoreId());
             threads.add(cpuDetail.getThreadId());
@@ -65,14 +65,14 @@ public class VanillaCpuLayout implements CpuLayout {
                     .append(" != sockets: ").append(sockets())
                     .append(" * coresPerSocket: ").append(coresPerSocket())
                     .append(" * threadsPerCore: ").append(threadsPerCore()).append('\n');
-            for (VanillaCpuInfo detail : cpuDetails) {
+            for (ICpuInfo detail : cpuDetails) {
                 error.append(detail).append('\n');
             }
             throw new AssertionError(error);
         }
     }
 
-    private List<Socket> createSocketsList(List<VanillaCpuInfo> cpuDetails) {
+    private List<Socket> createSocketsList(List<ICpuInfo> cpuDetails) {
 
         SortedSet   result = new TreeSet<Socket>();
 
@@ -83,7 +83,7 @@ public class VanillaCpuLayout implements CpuLayout {
         for ( int socketID: remainingSockets) {
             BitSet  mask = new BitSet( cpuDetails.size());
             for ( int i = 0;  i < cpuDetails.size();  i++) {
-                VanillaCpuInfo  cpuInfo = cpuDetails.get( i);
+                ICpuInfo  cpuInfo = cpuDetails.get( i);
 	            if ( cpuInfo.getSocketId() == socketID) {
 		            mask.set( i);
                 }
@@ -95,14 +95,14 @@ public class VanillaCpuLayout implements CpuLayout {
         return Collections.unmodifiableList( new ArrayList<Socket>( result));
     }
 
-    private List<Core> createCoreList(List<VanillaCpuInfo> cpuDetails, List<Socket> sockets) {
+    private List<Core> createCoreList(List<ICpuInfo> cpuDetails, List<Socket> sockets) {
 
         SortedSet   result = new TreeSet<Core>();
 
         // gather elements to process
         Set<Core> remainingCores = new HashSet<>();
 	    for ( int i = 0;  i < cpuDetails.size();  i++) {
-		    VanillaCpuInfo  cpuInfo = cpuDetails.get( i);
+            ICpuInfo  cpuInfo = cpuDetails.get( i);
 		    Core core = new Core((BitSet) null);
 		    core.setId( cpuInfo.getCoreId());
 		    Optional<Socket> socketO = sockets.stream().filter(s -> s.getId() == cpuInfo.getSocketId()).findFirst();
@@ -116,7 +116,7 @@ public class VanillaCpuLayout implements CpuLayout {
         for ( Core remCore: remainingCores) {
             BitSet  mask = new BitSet( cpuDetails.size());
             for ( int i = 0;  i < cpuDetails.size();  i++) {
-                VanillaCpuInfo  cpuInfo = cpuDetails.get( i);
+                ICpuInfo  cpuInfo = cpuDetails.get( i);
                 if ( cpuInfo.getCoreId() == remCore.getId()
 		                && cpuInfo.getSocketId() == remCore.getSocket().getId()) {
 	                mask.set(i);
@@ -144,7 +144,7 @@ public class VanillaCpuLayout implements CpuLayout {
 
     @NotNull
     public static VanillaCpuLayout fromProperties(@NotNull Properties prop) {
-        List<VanillaCpuInfo> cpuDetails = new ArrayList<VanillaCpuInfo>();
+        List<ICpuInfo> cpuDetails = new ArrayList<>();
         for (int i = 0; i < MAX_CPUS_SUPPORTED; i++) {
             String line = prop.getProperty("" + i);
             if (line == null) break;
@@ -181,7 +181,7 @@ public class VanillaCpuLayout implements CpuLayout {
     public static VanillaCpuLayout fromCpuInfo(InputStream is) throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"));
         String line;
-        List<VanillaCpuInfo> cpuDetails = new ArrayList<VanillaCpuInfo>();
+        List<ICpuInfo> cpuDetails = new ArrayList<>();
         VanillaCpuInfo details = new VanillaCpuInfo();
         Map<String, Integer> threadCount = new LinkedHashMap<String, Integer>();
 
@@ -204,8 +204,6 @@ public class VanillaCpuLayout implements CpuLayout {
                 details.setSocketId(parseInt(words[1]));
             else if (words[0].equals("core id"))
 	            details.setCoreId(parseInt(words[1]));
-            else if (words[0].equals("apicid"))
-	            details.setApicId(parseInt(words[1]));
         }
         return new VanillaCpuLayout(cpuDetails);
     }
@@ -248,7 +246,7 @@ public class VanillaCpuLayout implements CpuLayout {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0, cpuDetailsSize = cpuDetails.size(); i < cpuDetailsSize; i++) {
-            VanillaCpuInfo cpuDetail = cpuDetails.get(i);
+            ICpuInfo cpuDetail = cpuDetails.get(i);
             sb.append(i).append(": ").append(cpuDetail).append('\n');
         }
         return sb.toString();
