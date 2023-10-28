@@ -29,47 +29,47 @@ import java.util.concurrent.ThreadFactory;
  * @author peter.lawrey
  */
 public class AffinityThreadFactory implements ThreadFactory {
-    private final String name;
-    private final boolean daemon;
-    @NotNull
-    private final AffinityStrategy[] strategies;
-    @Nullable
-    private AffinityLock lastAffinityLock = null;
-    private int id = 1;
+	private final String name;
+	private final boolean daemon;
+	@NotNull
+	private final AffinityStrategy[] strategies;
+	@Nullable
+	private AffinityLock lastAffinityLock = null;
+	private int id = 1;
 
-    public AffinityThreadFactory(String name, AffinityStrategy... strategies) {
-        this(name, true, strategies);
-    }
+	public AffinityThreadFactory(String name, AffinityStrategy... strategies) {
+		this(name, true, strategies);
+	}
 
-    public AffinityThreadFactory(String name, boolean daemon, @NotNull AffinityStrategy... strategies) {
-        this.name = name;
-        this.daemon = daemon;
-        this.strategies = strategies.length == 0 ? new AffinityStrategy[]{AffinityStrategies.ANY} : strategies;
-    }
+	public AffinityThreadFactory(String name, boolean daemon, @NotNull AffinityStrategy... strategies) {
+		this.name = name;
+		this.daemon = daemon;
+		this.strategies = strategies.length == 0 ? new AffinityStrategy[]{AffinityStrategies.ANY} : strategies;
+	}
 
-    @NotNull
-    @Override
-    public synchronized Thread newThread(@NotNull final Runnable r) {
-        final String name2 = id < 1 ? name : (name + '-' + id);
-        id++;
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                AffinityLock al = lastAffinityLock == null ? AffinityLock.acquireLock() : lastAffinityLock.acquireLock(strategies);
-                try {
-                    if (al.cpuId() >= 0)
-                        lastAffinityLock = al;
-                    beforeRun( al, Thread.currentThread());
-                    r.run();
-                } finally {
-                    al.release();
-                }
-            }
-        }, name2);
-        t.setDaemon(daemon);
-        return t;
-    }
+	@NotNull
+	@Override
+	public synchronized Thread newThread(@NotNull final Runnable r) {
+		final String name2 = id < 1 ? name : (name + '-' + id);
+		id++;
+		Thread t = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				AffinityLock al = lastAffinityLock == null ? AffinityLock.acquireLock() : lastAffinityLock.acquireLock(strategies);
+				try {
+					if (al.cpuId() >= 0)
+						lastAffinityLock = al;
+					beforeRun(al, Thread.currentThread());
+					r.run();
+				} finally {
+					al.release();
+				}
+			}
+		}, name2);
+		t.setDaemon(daemon);
+		return t;
+	}
 
-	protected void beforeRun( AffinityLock al, Thread currentThread) {
+	protected void beforeRun(AffinityLock al, Thread currentThread) {
 	}
 }

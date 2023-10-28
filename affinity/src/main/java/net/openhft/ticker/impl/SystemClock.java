@@ -25,26 +25,26 @@ import net.openhft.ticker.ITicker;
  * @since 29.12.11,  18:54
  */
 public enum SystemClock implements ITicker {
-    INSTANCE;
+	INSTANCE;
 
-    @Override
-    public long nanoTime() {
-        return System.nanoTime();
-    }
+	@Override
+	public long nanoTime() {
+		return System.nanoTime();
+	}
 
-    @Override
-    public long ticks() {
-        return nanoTime();
-    }
+	@Override
+	public long ticks() {
+		return nanoTime();
+	}
 
-    @Override
-    public long toNanos(long ticks) {
-        return ticks;
-    }
+	@Override
+	public long toNanos(long ticks) {
+		return ticks;
+	}
 
-    @Override
-    public double toMicros(double ticks) {
-        return ticks / 1e3;
-    }
+	@Override
+	public double toMicros(double ticks) {
+		return ticks / 1e3;
+	}
 
 }

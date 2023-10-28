@@ -16,13 +16,20 @@
 
 package net.openhft.affinity.impl;
 
-import com.sun.jna.platform.win32.*;
-import net.openhft.affinity.*;
-import net.openhft.affinity.impl.LayoutEntities.*;
-import org.junit.*;
+import com.sun.jna.platform.win32.WinNT;
+import net.openhft.affinity.Affinity;
+import net.openhft.affinity.IAffinity;
+import net.openhft.affinity.impl.LayoutEntities.Cache;
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
-import java.text.*;
-import java.util.*;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -44,10 +51,10 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 		WinImpl = (WindowsJNAAffinity) impl;
 	}
 
-    @Override
-    public IAffinity getImpl() {
-        return Affinity.getAffinityImpl();
-    }
+	@Override
+	public IAffinity getImpl() {
+		return Affinity.getAffinityImpl();
+	}
 
 	@Test
 	public void testGetAffinityGroups() {
@@ -58,13 +65,13 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 		// must find at least one group
 		Map<Integer, BitSet> numaNodes = WinImpl.getNumaNodes();
 		assertTrue("Must have at least one node", numaNodes.size() > 0);
-		System.out.println( "Nodes: " + numaNodes);
+		System.out.println("Nodes: " + numaNodes);
 	}
 
 	@Test
 	public void testSet0() {
-		long[]  longMask = new long[ 1];
-		longMask[ 0] = 1;
+		long[] longMask = new long[1];
+		longMask[0] = 1;
 		BitSet mask = BitSet.valueOf(longMask);
 		WinImpl.setThreadAffinity(mask);
 		BitSet after = WinImpl.getAffinity();
@@ -73,15 +80,15 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 
 	@Test
 	public void testShow() {
-		testRelationType( "all relations", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationAll);
-		testRelationType( "cores", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationProcessorCore);
+		testRelationType("all relations", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationAll);
+		testRelationType("cores", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationProcessorCore);
 		testRelationType("packages", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationProcessorPackage);
-		testRelationType( "caches", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationCache);
+		testRelationType("caches", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationCache);
 		testRelationType("getNodes", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationNumaNode);
 		testRelationType("groups", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationGroup);
 	}
 
-	void testRelationType( String name, int typeID) {
+	void testRelationType(String name, int typeID) {
 		System.out.println("\n" + name + ": ");
 		try {
 			WindowsJNAAffinity.SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX[] infos = WinImpl.getLogicalProcessorInformation(typeID);
@@ -96,8 +103,8 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 				assertTrue("strange relation type: " + slpi, WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationGroup >= slpi.relationShip);
 				assertTrue("strange size: " + slpi, slpi.size() < 500);
 			}
-		} catch ( Exception e) {
-			e.printStackTrace( System.out);
+		} catch (Exception e) {
+			e.printStackTrace(System.out);
 		}
 		System.err.flush();
 		System.out.flush();
@@ -120,7 +127,7 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 
 	@Test
 	public void testCpuInfoMasks() {
-		WindowsCpuLayout    l = (WindowsCpuLayout) WinImpl.getDefaultLayout();
+		WindowsCpuLayout l = (WindowsCpuLayout) WinImpl.getDefaultLayout();
 		l.visitCpus(info1 -> {
 			l.visitCpus(info2 -> {
 				if (info1 != info2) {
@@ -136,8 +143,8 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 
 	@Test
 	public void testCpuInfoMaskCardinality() {
-		WindowsCpuLayout    l = (WindowsCpuLayout) WinImpl.getDefaultLayout();
-		l.visitCpus( info1 -> {
+		WindowsCpuLayout l = (WindowsCpuLayout) WinImpl.getDefaultLayout();
+		l.visitCpus(info1 -> {
 			BitSet mask1 = WindowsJNAAffinity.asBitSet(info1.getMask());
 			assertEquals("Mask Cardinality for " + info1 + " not " + 1, 1, mask1.cardinality());
 		});
@@ -145,13 +152,13 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 
 	@Test
 	public void testCpuInfoSwitch() {
-		WindowsCpuLayout    cpuLayout = (WindowsCpuLayout) WinImpl.getDefaultLayout();
+		WindowsCpuLayout cpuLayout = (WindowsCpuLayout) WinImpl.getDefaultLayout();
 		int index = WinImpl.getCpu();
 		WindowsCpuInfo current = cpuLayout.lCpu(index);
-		System.out.println("running on #" + index + ": " + current + " enc " + System.getProperty( "file.encoding"));
-		NumberFormat    nf = DecimalFormat.getNumberInstance();
-		nf.setGroupingUsed( true);
-		nf.setMaximumFractionDigits( 3);
+		System.out.println("running on #" + index + ": " + current + " enc " + System.getProperty("file.encoding"));
+		NumberFormat nf = DecimalFormat.getNumberInstance();
+		nf.setGroupingUsed(true);
+		nf.setMaximumFractionDigits(3);
 		cpuLayout.visitCpus(info1 -> {
 			long switched = System.nanoTime();
 			WinImpl.setGroupAffinity(info1.getGroupId(), info1.getMask());
@@ -167,12 +174,12 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 	@Test
 	public void testJNADirect() {
 		short[] groupA = new short[1];
-		byte[]  cpuA = new byte[1];
+		byte[] cpuA = new byte[1];
 		WindowsJNAAffinity.PROCESSOR_NUMBER.ByReference pNum = new WindowsJNAAffinity.PROCESSOR_NUMBER.ByReference();
 
-		WindowsCpuLayout    cpuLayout = (WindowsCpuLayout) WinImpl.getDefaultLayout();
+		WindowsCpuLayout cpuLayout = (WindowsCpuLayout) WinImpl.getDefaultLayout();
 		cpuLayout.visitCpus(info1 -> {
-			WinImpl.setGroupAffinity( info1.getGroupId(), info1.getMask());
+			WinImpl.setGroupAffinity(info1.getGroupId(), info1.getMask());
 			WinImpl.getCurrentCpuInfo(groupA, cpuA);
 			WinImpl.getCurrentProcessorNumber(pNum);
 			System.out.println("direct: " + groupA[0] + "/" + cpuA[0]);
@@ -185,73 +192,84 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 
 	@Test
 	public void basicSetAffinity() {
-		WindowsCpuLayout    cpuLayout = (WindowsCpuLayout) WinImpl.getDefaultLayout();
+		WindowsCpuLayout cpuLayout = (WindowsCpuLayout) WinImpl.getDefaultLayout();
 		int nCPUs = cpuLayout.cpus();
-		Assume.assumeTrue( nCPUs <= 64);
-		for ( int cpu = 0;  cpu < nCPUs;  cpu++) {
-			BitSet affinity = new BitSet( nCPUs);
+		Assume.assumeTrue(nCPUs <= 64);
+		for (int cpu = 0; cpu < nCPUs; cpu++) {
+			BitSet affinity = new BitSet(nCPUs);
 			affinity.set(cpu);
-			WinImpl.setAffinity( affinity);
+			WinImpl.setAffinity(affinity);
 			BitSet affNow = WinImpl.getAffinity();
-			System.out.println( "cpu: " + cpu + " mask: " + affinity + " → " + affNow);
-			Assert.assertEquals( "affinity not set", affinity, affNow);
+			System.out.println("cpu: " + cpu + " mask: " + affinity + " → " + affNow);
+			Assert.assertEquals("affinity not set", affinity, affNow);
 		}
 	}
 
 	@Test
 	public void basicSetAffinityG() {
-		WindowsCpuLayout    cpuLayout = (WindowsCpuLayout) WinImpl.getDefaultLayout();
+		WindowsCpuLayout cpuLayout = (WindowsCpuLayout) WinImpl.getDefaultLayout();
 		int nCPUs = cpuLayout.cpus();
-		for ( int cpu = 0;  cpu < nCPUs;  cpu++) {
-			WindowsCpuInfo info = (WindowsCpuInfo) cpuLayout.lCpu( cpu);
-			GroupAffinityMask newGAM = new GroupAffinityMask( info.getGroupId(), info.getMask());
+		for (int cpu = 0; cpu < nCPUs; cpu++) {
+			WindowsCpuInfo info = cpuLayout.lCpu(cpu);
+			GroupAffinityMask newGAM = new GroupAffinityMask(info.getGroupId(), info.getMask());
 			try {
 				GroupAffinityMask previousGAM = WinImpl.setGroupAffinity(info.getGroupId(), info.getMask());
-				System.out.println( "cpu: " + cpu + " gam: " + newGAM);
-			} catch ( IllegalStateException ise) {
-				Assert.fail( "group affinity not set to gam: " + newGAM);
+				System.out.println("cpu: " + cpu + " gam: " + newGAM);
+			} catch (IllegalStateException ise) {
+				Assert.fail("group affinity not set to gam: " + newGAM);
 			}
 		}
 	}
 
 	@Test
-	public void listCaches() {
-		WindowsCpuLayout    cpuLayout = (WindowsCpuLayout) WinImpl.getDefaultLayout();
+	public void basicSetAffinityApic() {
+		WindowsCpuLayout cpuLayout = (WindowsCpuLayout) WinImpl.getDefaultLayout();
 		int nCPUs = cpuLayout.cpus();
-		for ( int cpu = 0;  cpu < nCPUs;  cpu++) {
-			WindowsCpuInfo info = (WindowsCpuInfo) cpuLayout.lCpu( cpu);
-			Cache	l1 = cpuLayout.getCache( cpu, 1);
-			Cache	l2 = cpuLayout.getCache( cpu, 2);
-			Cache	l3 = cpuLayout.getCache( cpu, 3);
-			System.out.print( "cpu: " + info);
-			if ( l1 != null) {
-				System.out.print( " L1: " + ( l1.getSize() >> 10) + " kB, "
+		for (int expectedCPU = 0; expectedCPU < nCPUs; expectedCPU++) {
+			WinImpl.setAffinity(expectedCPU);
+			int cpuid = Affinity.getCpu();
+			assertEquals("expectedCPU not set", expectedCPU, cpuid);
+		}
+	}
+
+	@Test
+	public void listCaches() {
+		WindowsCpuLayout cpuLayout = (WindowsCpuLayout) WinImpl.getDefaultLayout();
+		int nCPUs = cpuLayout.cpus();
+		for (int cpu = 0; cpu < nCPUs; cpu++) {
+			WindowsCpuInfo info = cpuLayout.lCpu(cpu);
+			Cache l1 = cpuLayout.getCache(cpu, 1);
+			Cache l2 = cpuLayout.getCache(cpu, 2);
+			Cache l3 = cpuLayout.getCache(cpu, 3);
+			System.out.print("cpu: " + info);
+			if (l1 != null) {
+				System.out.print(" L1: " + (l1.getSize() >> 10) + " kB, "
 						+ "line " + l1.getLineSize() + " B, "
-						+ "assoc " + ( l1.getAssociativity() < 255
-						? ( l1.getAssociativity() + "x")
+						+ "assoc " + (l1.getAssociativity() < 255
+						? (l1.getAssociativity() + "x")
 						: "full") + ", "
 						+ "type " + l1.getType()
-						+ " on cores " + Arrays.toString( l1.getCores())
+						+ " on cores " + Arrays.toString(l1.getCores())
 						+ ",   ");
 			}
-			if ( l2 != null) {
-				System.out.print( "L2: " + ( l2.getSize() >> 10) + " kB, "
+			if (l2 != null) {
+				System.out.print("L2: " + (l2.getSize() >> 10) + " kB, "
 						+ "line " + l2.getLineSize() + " B, "
-						+ "assoc " + ( l2.getAssociativity() < 255
-						? ( l2.getAssociativity() + "x")
+						+ "assoc " + (l2.getAssociativity() < 255
+						? (l2.getAssociativity() + "x")
 						: "full") + ", "
 						+ "type " + l2.getType()
-						+ " on cores " + Arrays.toString( l2.getCores())
+						+ " on cores " + Arrays.toString(l2.getCores())
 						+ ",   ");
 			}
-			if ( l3 != null) {
-				System.out.print( "L3: " + ( l3.getSize() >> 10) + " kB, "
+			if (l3 != null) {
+				System.out.print("L3: " + (l3.getSize() >> 10) + " kB, "
 						+ "line " + l3.getLineSize() + " B, "
-						+ "assoc " + ( l3.getAssociativity() < 255
-						? ( l3.getAssociativity() + "x")
+						+ "assoc " + (l3.getAssociativity() < 255
+						? (l3.getAssociativity() + "x")
 						: "full") + ", "
 						+ "type " + l3.getType()
-						+ " on cores " + Arrays.toString( l3.getCores())
+						+ " on cores " + Arrays.toString(l3.getCores())
 						+ ",   ");
 			}
 			System.out.println();
@@ -260,9 +278,9 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 
 	@Test
 	public void listCacheCoreRelations() {
-		WindowsCpuLayout    cpuLayout = (WindowsCpuLayout) WinImpl.getDefaultLayout();
-		cpuLayout.getCaches().forEach( cache -> {
-			System.out.println( "Cache " + cache + " on " + cache.getLocation());
+		WindowsCpuLayout cpuLayout = (WindowsCpuLayout) WinImpl.getDefaultLayout();
+		cpuLayout.getCaches().forEach(cache -> {
+			System.out.println("Cache " + cache + " on " + cache.getLocation());
 		});
 	}
 }

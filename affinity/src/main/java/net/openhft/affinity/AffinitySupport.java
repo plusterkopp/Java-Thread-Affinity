@@ -22,11 +22,12 @@ package net.openhft.affinity;
 @Deprecated
 public class AffinitySupport {
 
-    public static int getThreadId() {
-        return Affinity.getThreadId();
-    }
-    public static void setThreadId() {
-        Affinity.setThreadId();
-    }
+	public static int getThreadId() {
+		return Affinity.getThreadId();
+	}
+
+	public static void setThreadId() {
+		Affinity.setThreadId();
+	}
 
 }

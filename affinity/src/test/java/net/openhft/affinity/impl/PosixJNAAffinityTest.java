@@ -29,34 +29,34 @@ import static org.junit.Assert.assertTrue;
  * @author peter.lawrey
  */
 public class PosixJNAAffinityTest extends AbstractAffinityImplTest {
-    @BeforeClass
-    public static void checkJniLibraryPresent() {
-        Assume.assumeTrue("linux".equalsIgnoreCase(System.getProperty("os.name")));
-    }
+	@BeforeClass
+	public static void checkJniLibraryPresent() {
+		Assume.assumeTrue("linux".equalsIgnoreCase(System.getProperty("os.name")));
+	}
 
-    @Override
-    public IAffinity getImpl() {
-        return Affinity.getAffinityImpl();
-    }
+	@Override
+	public IAffinity getImpl() {
+		return Affinity.getAffinityImpl();
+	}
 
-    @Test
-    public void testGettid() {
-        System.out.println("pid=" + getImpl().getProcessId());
-        System.out.println("tid=" + getImpl().getThreadId());
-        AffinitySupport.setThreadId();
+	@Test
+	public void testGettid() {
+		System.out.println("pid=" + getImpl().getProcessId());
+		System.out.println("tid=" + getImpl().getThreadId());
+		AffinitySupport.setThreadId();
 
-        for (int j = 0; j < 3; j++) {
-            final int runs = 100000;
-            long tid = 0;
-            long time = 0;
-            for (int i = 0; i < runs; i++) {
-                long start = System.nanoTime();
-                tid = Thread.currentThread().getId();
-                time += System.nanoTime() - start;
-                assertTrue(tid > 0);
-                assertTrue(tid < 1 << 24);
-            }
-            System.out.printf("gettid took an average of %,d ns, tid=%d%n", time / runs, tid);
-        }
-    }
+		for (int j = 0; j < 3; j++) {
+			final int runs = 100000;
+			long tid = 0;
+			long time = 0;
+			for (int i = 0; i < runs; i++) {
+				long start = System.nanoTime();
+				tid = Thread.currentThread().getId();
+				time += System.nanoTime() - start;
+				assertTrue(tid > 0);
+				assertTrue(tid < 1 << 24);
+			}
+			System.out.printf("gettid took an average of %,d ns, tid=%d%n", time / runs, tid);
+		}
+	}
 }

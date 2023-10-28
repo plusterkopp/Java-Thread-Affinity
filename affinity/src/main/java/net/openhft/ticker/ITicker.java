@@ -20,11 +20,11 @@ package net.openhft.ticker;
  * Created by peter on 13/07/15.
  */
 public interface ITicker {
-    long nanoTime();
+	long nanoTime();
 
-    long ticks();
+	long ticks();
 
-    long toNanos(long ticks);
+	long toNanos(long ticks);
 
-    double toMicros(double ticks);
+	double toMicros(double ticks);
 }

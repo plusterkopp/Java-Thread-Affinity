@@ -22,86 +22,86 @@ package net.openhft.affinity;
  * @author peter.lawrey
  */
 public enum AffinityStrategies implements AffinityStrategy {
-    /**
-     * Any free cpu.
-     */
-    ANY {
-        @Override
-        public boolean matches(int cpuId, int cpuId2) {
-            return true;
-        }
-    },
-    /**
-     * Must be a cpu on the same core.
-     */
-    SAME_CORE {
-        @Override
-        public boolean matches(int cpuId, int cpuId2) {
-            CpuLayout cpuLayout = AffinityLock.cpuLayout();
-            return cpuLayout.socketId(cpuId) == cpuLayout.socketId(cpuId2) &&
-                    cpuLayout.coreId(cpuId) == cpuLayout.coreId(cpuId2);
-        }
-    },
-    /**
-     * Must be a cpu on the same socket/chip but different core.
-     */
-    SAME_SOCKET {
-        @Override
-        public boolean matches(int cpuId, int cpuId2) {
-            CpuLayout cpuLayout = AffinityLock.cpuLayout();
-            return cpuLayout.socketId(cpuId) == cpuLayout.socketId(cpuId2) &&
-                    cpuLayout.coreId(cpuId) != cpuLayout.coreId(cpuId2);
-        }
-    },
-    /**
-     * Must be a cpu on same node.
-     */
-    SAME_NODE {
-        @Override
-        public boolean matches(int cpuId, int cpuId2) {
-            CpuLayout cpuLayout = AffinityLock.cpuLayout();
-            // always match if no numa support
-            if ( ! ( cpuLayout instanceof NumaCpuLayout)) {
-                return true;
-            }
-            NumaCpuLayout numaLayout = (NumaCpuLayout) cpuLayout;
-            return numaLayout.numaNodeId(cpuId) == numaLayout.numaNodeId(cpuId2);
-        }
-    },
-    /**
-     * Must be a cpu on any other core (or socket)
-     */
-    DIFFERENT_CORE {
-        @Override
-        public boolean matches(int cpuId, int cpuId2) {
-            CpuLayout cpuLayout = AffinityLock.cpuLayout();
-            return cpuLayout.socketId(cpuId) != cpuLayout.socketId(cpuId2) ||
-                    cpuLayout.coreId(cpuId) != cpuLayout.coreId(cpuId2);
-        }
-    },
-    /**
-     * Must be a cpu on any other socket.
-     */
-    DIFFERENT_SOCKET {
-        @Override
-        public boolean matches(int cpuId, int cpuId2) {
-            CpuLayout cpuLayout = AffinityLock.cpuLayout();
-            return cpuLayout.socketId(cpuId) != cpuLayout.socketId(cpuId2);
-        }
-    },
-    /**
-     * Must be a cpu on any other node.
-     */
-    DIFFERENT_NODE {
-        @Override
-        public boolean matches(int cpuId, int cpuId2) {
-            CpuLayout cpuLayout = AffinityLock.cpuLayout();
-            // always match if no numa support
-            if ( ! ( cpuLayout instanceof NumaCpuLayout)) {
-                return true;
-            }
-            NumaCpuLayout numaLayout = (NumaCpuLayout) cpuLayout;
-            return numaLayout.numaNodeId(cpuId) != numaLayout.numaNodeId(cpuId2);
-        }
-    }
+	/**
+	 * Any free cpu.
+	 */
+	ANY {
+		@Override
+		public boolean matches(int cpuId, int cpuId2) {
+			return true;
+		}
+	},
+	/**
+	 * Must be a cpu on the same core.
+	 */
+	SAME_CORE {
+		@Override
+		public boolean matches(int cpuId, int cpuId2) {
+			CpuLayout cpuLayout = AffinityLock.cpuLayout();
+			return cpuLayout.socketId(cpuId) == cpuLayout.socketId(cpuId2) &&
+					cpuLayout.coreId(cpuId) == cpuLayout.coreId(cpuId2);
+		}
+	},
+	/**
+	 * Must be a cpu on the same socket/chip but different core.
+	 */
+	SAME_SOCKET {
+		@Override
+		public boolean matches(int cpuId, int cpuId2) {
+			CpuLayout cpuLayout = AffinityLock.cpuLayout();
+			return cpuLayout.socketId(cpuId) == cpuLayout.socketId(cpuId2) &&
+					cpuLayout.coreId(cpuId) != cpuLayout.coreId(cpuId2);
+		}
+	},
+	/**
+	 * Must be a cpu on same node.
+	 */
+	SAME_NODE {
+		@Override
+		public boolean matches(int cpuId, int cpuId2) {
+			CpuLayout cpuLayout = AffinityLock.cpuLayout();
+			// always match if no numa support
+			if (!(cpuLayout instanceof NumaCpuLayout)) {
+				return true;
+			}
+			NumaCpuLayout numaLayout = (NumaCpuLayout) cpuLayout;
+			return numaLayout.numaNodeId(cpuId) == numaLayout.numaNodeId(cpuId2);
+		}
+	},
+	/**
+	 * Must be a cpu on any other core (or socket)
+	 */
+	DIFFERENT_CORE {
+		@Override
+		public boolean matches(int cpuId, int cpuId2) {
+			CpuLayout cpuLayout = AffinityLock.cpuLayout();
+			return cpuLayout.socketId(cpuId) != cpuLayout.socketId(cpuId2) ||
+					cpuLayout.coreId(cpuId) != cpuLayout.coreId(cpuId2);
+		}
+	},
+	/**
+	 * Must be a cpu on any other socket.
+	 */
+	DIFFERENT_SOCKET {
+		@Override
+		public boolean matches(int cpuId, int cpuId2) {
+			CpuLayout cpuLayout = AffinityLock.cpuLayout();
+			return cpuLayout.socketId(cpuId) != cpuLayout.socketId(cpuId2);
+		}
+	},
+	/**
+	 * Must be a cpu on any other node.
+	 */
+	DIFFERENT_NODE {
+		@Override
+		public boolean matches(int cpuId, int cpuId2) {
+			CpuLayout cpuLayout = AffinityLock.cpuLayout();
+			// always match if no numa support
+			if (!(cpuLayout instanceof NumaCpuLayout)) {
+				return true;
+			}
+			NumaCpuLayout numaLayout = (NumaCpuLayout) cpuLayout;
+			return numaLayout.numaNodeId(cpuId) != numaLayout.numaNodeId(cpuId2);
+		}
+	}
 }

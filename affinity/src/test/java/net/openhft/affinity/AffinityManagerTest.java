@@ -11,20 +11,20 @@ import java.util.List;
 
 public class AffinityManagerTest {
 
-	static private IAffinity   impl = null;
+	static private IAffinity impl = null;
 	static private VanillaCpuLayout layout = null;
 
 	@BeforeClass
 	public static void setUpBeforeClass() {
 		impl = Affinity.getAffinityImpl();
-		if ( impl instanceof IDefaultLayoutAffinity) {
+		if (impl instanceof IDefaultLayoutAffinity) {
 			IDefaultLayoutAffinity dla = (IDefaultLayoutAffinity) impl;
 			CpuLayout cpuLayout = dla.getDefaultLayout();
 			if (cpuLayout instanceof VanillaCpuLayout) {
 				layout = (VanillaCpuLayout) cpuLayout;
 			}
 		}
-		Assume.assumeTrue( "can not run with " + impl.getClass(), layout != null);
+		Assume.assumeTrue("can not run with " + impl.getClass(), layout != null);
 		AffinityManager.getInstance().dumpLayout();
 	}
 
@@ -44,9 +44,9 @@ public class AffinityManagerTest {
 			}
 		}
 		// Sockets, more than one loop
-		for ( int i = 0;  i < 100;  i++) {
+		for (int i = 0; i < 100; i++) {
 			for (Socket socket : layout.packages) {
-				if ( i == 0) {
+				if (i == 0) {
 					System.out.println("binding to socket " + socket);
 				}
 				boolean success = AffinityManager.getInstance().bindToSocket(socket);
@@ -54,21 +54,21 @@ public class AffinityManagerTest {
 			}
 		}
 		// Cores, more than one loop
-		for ( int i = 0;  i < 100;  i++) {
+		for (int i = 0; i < 100; i++) {
 			for (Core core : layout.cores) {
-				if ( i == 0) {
+				if (i == 0) {
 					System.out.println("binding to core " + core);
 				}
 				boolean success = AffinityManager.getInstance().bindToCore(core.getId());
 				Assert.assertTrue("did not bind core " + core.getId(), success);
 			}
 		}
-		if ( layout instanceof CacheCpuLayout) {
+		if (layout instanceof CacheCpuLayout) {
 			CacheCpuLayout cacheLayout = (CacheCpuLayout) layout;
 			// Caches, more than one loop
-			for ( int i = 0;  i < 100;  i++) {
+			for (int i = 0; i < 100; i++) {
 				for (Cache cache : cacheLayout.getCaches()) {
-					if ( i == 0) {
+					if (i == 0) {
 						System.out.println("binding to cache " + cache);
 					}
 					boolean success = AffinityManager.getInstance().bindToCache(cache);
@@ -78,9 +78,9 @@ public class AffinityManagerTest {
 		}
 		// must not bind for other ids
 		final int wrongSocketId = layout.sockets() + 1;
-		System.out.println( "not binding to socket " + wrongSocketId);
+		System.out.println("not binding to socket " + wrongSocketId);
 		boolean success = AffinityManager.getInstance().bindToSocket(wrongSocketId);
-		Assert.assertFalse( "bound to non-existing socket " + wrongSocketId, success);
+		Assert.assertFalse("bound to non-existing socket " + wrongSocketId, success);
 
 	}
 
@@ -88,7 +88,7 @@ public class AffinityManagerTest {
 	public void testBoundTo() {
 		// Nodes
 		final AffinityManager am = AffinityManager.getInstance();
-		if ( layout instanceof GroupedCpuLayout) {
+		if (layout instanceof GroupedCpuLayout) {
 			GroupedCpuLayout gLayout = (GroupedCpuLayout) layout;
 			for (Group group : gLayout.getGroups()) {
 				System.out.print("binding to group " + group);
@@ -96,10 +96,10 @@ public class AffinityManagerTest {
 				List<LayoutEntity> boundTo = am.getBoundTo(Thread.currentThread());
 				System.out.println(" … bound to " + boundTo + " (" + success + ")");
 				Assert.assertEquals("too many entities " + boundTo, 1, boundTo.size());
-				Assert.assertEquals( "bound to another entity", group, boundTo.get( 0));
+				Assert.assertEquals("bound to another entity", group, boundTo.get(0));
 			}
 		}
-		if ( layout instanceof NumaCpuLayout) {
+		if (layout instanceof NumaCpuLayout) {
 			NumaCpuLayout nLayout = (NumaCpuLayout) layout;
 			for (NumaNode node : nLayout.getNodes()) {
 				System.out.print("binding to node " + node);
@@ -112,24 +112,24 @@ public class AffinityManagerTest {
 		}
 		// Sockets
 		for (Socket socket : layout.packages) {
-			System.out.print( "binding to socket " + socket);
+			System.out.print("binding to socket " + socket);
 			boolean success = am.bindToSocket(socket);
 			List<LayoutEntity> boundTo = am.getBoundTo(Thread.currentThread());
 			System.out.println(" … bound to " + boundTo + " (" + success + ")");
 			Assert.assertEquals("too many entities " + boundTo, 1, boundTo.size());
-			Assert.assertEquals( "bound to another entity", socket, boundTo.get( 0));
+			Assert.assertEquals("bound to another entity", socket, boundTo.get(0));
 		}
 		// Cores
-		for (Core core: layout.cores) {
-			System.out.print( "binding to core " + core);
+		for (Core core : layout.cores) {
+			System.out.print("binding to core " + core);
 			boolean success = am.bindToCore(core);
 			List<LayoutEntity> boundTo = am.getBoundTo(Thread.currentThread());
 			System.out.println(" … bound to " + boundTo + " (" + success + ")");
 			Assert.assertEquals("too many entities " + boundTo, 1, boundTo.size());
-			Assert.assertEquals( "bound to another entity", core, boundTo.get( 0));
+			Assert.assertEquals("bound to another entity", core, boundTo.get(0));
 		}
 		// Caches
-		if ( layout instanceof CacheCpuLayout) {
+		if (layout instanceof CacheCpuLayout) {
 			CacheCpuLayout cacheLayout = (CacheCpuLayout) layout;
 			for (Cache cache : cacheLayout.getCaches()) {
 				System.out.print("binding to cache " + cache);
@@ -137,7 +137,7 @@ public class AffinityManagerTest {
 				List<LayoutEntity> boundTo = am.getBoundTo(Thread.currentThread());
 				System.out.println(" … bound to " + boundTo + " (" + success + ")");
 				Assert.assertEquals("too many entities " + boundTo, 1, boundTo.size());
-				Assert.assertEquals( "bound to another entity", cache, boundTo.get( 0));
+				Assert.assertEquals("bound to another entity", cache, boundTo.get(0));
 			}
 		}
 	}

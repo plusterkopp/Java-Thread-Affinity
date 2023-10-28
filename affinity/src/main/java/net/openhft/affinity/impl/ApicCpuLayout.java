@@ -16,15 +16,20 @@
 
 package net.openhft.affinity.impl;
 
-import net.openhft.affinity.*;
-import net.openhft.affinity.impl.LayoutEntities.*;
-import org.jetbrains.annotations.*;
+import net.openhft.affinity.ICpuInfo;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.io.*;
-import java.util.*;
-import java.util.stream.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
-import static java.lang.Integer.*;
+import static java.lang.Integer.parseInt;
 
 /**
  * @author peter.lawrey
@@ -32,7 +37,7 @@ import static java.lang.Integer.*;
 public class ApicCpuLayout extends VanillaCpuLayout {
 
 	ApicCpuLayout(@NotNull List<ICpuInfo> cpuDetails) {
-		super( cpuDetails);
+		super(cpuDetails);
 	}
 
 
@@ -70,9 +75,10 @@ public class ApicCpuLayout extends VanillaCpuLayout {
 		return cpuDetails.equals(that.cpuDetails);
 	}
 
-	public ICpuInfo getCPUInfo( int index) {
-		return cpuDetails.get( index);
+	public ICpuInfo getCPUInfo(int index) {
+		return cpuDetails.get(index);
 	}
+
 	public static ApicCpuLayout fromCpuInfo(InputStream is) throws IOException {
 		BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"));
 		String line;

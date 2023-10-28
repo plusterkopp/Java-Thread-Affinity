@@ -3,74 +3,75 @@ package net.openhft.affinity.impl.LayoutEntities;
 import net.openhft.affinity.impl.GroupAffinityMask;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.BitSet;
+import java.util.Objects;
 
 /**
  * Created by rhelbing on 31.03.17.
  */
 public class Core extends LayoutEntity {
-    private Socket socket;
+	private Socket socket;
 
-    public Core(GroupAffinityMask m) {
-        super(m);
-    }
+	public Core(GroupAffinityMask m) {
+		super(m);
+	}
 
-    public Core(int group, long mask) {
-        super(group, mask);
-    }
+	public Core(int group, long mask) {
+		super(group, mask);
+	}
 
-    public Core(BitSet mask) {
-        super( mask);
-    }
+	public Core(BitSet mask) {
+		super(mask);
+	}
 
-    public Core( int id) {
-        super( id);
-    }
+	public Core(int id) {
+		super(id);
+	}
 
-    public void setSocket(Socket socket) {
-        this.socket = socket;
-    }
+	public void setSocket(Socket socket) {
+		this.socket = socket;
+	}
 
-    public Socket getSocket() {
-        return socket;
-    }
+	public Socket getSocket() {
+		return socket;
+	}
 
-    public String toString() {
-        return "C " + super.toString() + " on " + getSocket();
-    }
+	public String toString() {
+		return "C " + super.toString() + " on " + getSocket();
+	}
 
-    public String getLocation() {
-        return getSocket().getLocation() + "/" + getId();
-    }
+	public String getLocation() {
+		return getSocket().getLocation() + "/" + getId();
+	}
 
-    public int hashCode() {
-        int socketId = -1;
-        if (socket != null) {
-            socketId = socket.getId();
-        }
-        return 1023 * socketId + getId();
-    }
+	public int hashCode() {
+		int socketId = -1;
+		if (socket != null) {
+			socketId = socket.getId();
+		}
+		return 1023 * socketId + getId();
+	}
 
-    @Override
-    public boolean equals(@Nullable Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+	@Override
+	public boolean equals(@Nullable Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
 
-        Core otherCore = (Core) o;
-        if ( getId() != otherCore.getId()) {
-            return false;
-        }
-        Socket otherSocket = otherCore.getSocket();
-        if ( ! Objects.equals( otherSocket, getSocket())) {
-            return false;
-        }
-        return true;
+		Core otherCore = (Core) o;
+		if (getId() != otherCore.getId()) {
+			return false;
+		}
+		Socket otherSocket = otherCore.getSocket();
+		if (!Objects.equals(otherSocket, getSocket())) {
+			return false;
+		}
+		return true;
 
-    }
+	}
 
 
 }

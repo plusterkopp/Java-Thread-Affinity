@@ -26,5 +26,5 @@ import net.openhft.affinity.impl.GroupAffinityMask;
  */
 public interface IGroupAffinity {
 
-    public GroupAffinityMask setGroupAffinity(int groupId, long mask);
+	public GroupAffinityMask setGroupAffinity(int groupId, long mask);
 }

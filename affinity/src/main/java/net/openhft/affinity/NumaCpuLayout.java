@@ -10,7 +10,7 @@ import java.util.List;
  */
 public interface NumaCpuLayout {
 
-	int numaNodeId( int cpuId);
+	int numaNodeId(int cpuId);
 
 	int numaNodes();
 

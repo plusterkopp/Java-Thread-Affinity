@@ -15,223 +15,224 @@
   ~     along with this program.  If not, see <http://www.gnu.org/licenses />.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-    <parent>
-        <groupId>net.openhft</groupId>
-        <artifactId>java-parent-pom</artifactId>
-        <version>1.1.4</version>
-        <relativePath />
-    </parent>
+	<parent>
+		<groupId>net.openhft</groupId>
+		<artifactId>java-parent-pom</artifactId>
+		<version>1.1.4</version>
+		<relativePath/>
+	</parent>
 
-    <modelVersion>4.0.0</modelVersion>
-    <groupId>de.pkmd</groupId>
-    <artifactId>affinity</artifactId>
-    <version>3.4.0.4</version>
-    <packaging>bundle</packaging>
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>de.pkmd</groupId>
+	<artifactId>affinity</artifactId>
+	<version>3.4.0.4</version>
+	<packaging>bundle</packaging>
 
-    <name>Java-Thread-Affinity/affinity</name>
-    <description>Java Thread Affinity library with Windows support</description>
+	<name>Java-Thread-Affinity/affinity</name>
+	<description>Java Thread Affinity library with Windows support</description>
 
-    <properties>
-        <native.source.dir>src/main/c</native.source.dir>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
+	<properties>
+		<native.source.dir>src/main/c</native.source.dir>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>net.openhft</groupId>
-                <artifactId>third-party-bom</artifactId>
-                <type>pom</type>
-                <version>3.4.20</version>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>net.openhft</groupId>
+				<artifactId>third-party-bom</artifactId>
+				<type>pom</type>
+				<version>3.4.20</version>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 
-    <dependencies>
-        <dependency>
-            <groupId>net.java.dev.jna</groupId>
-            <artifactId>jna</artifactId>
-            <version>5.12.1</version>
-        </dependency>
-        <dependency>
-            <groupId>net.java.dev.jna</groupId>
-            <artifactId>jna-platform</artifactId>
-            <version>5.12.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.kohsuke.jetbrains</groupId>
-            <artifactId>annotations</artifactId>
-        </dependency>
+	<dependencies>
+		<dependency>
+			<groupId>net.java.dev.jna</groupId>
+			<artifactId>jna</artifactId>
+			<version>5.12.1</version>
+		</dependency>
+		<dependency>
+			<groupId>net.java.dev.jna</groupId>
+			<artifactId>jna-platform</artifactId>
+			<version>5.12.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.kohsuke.jetbrains</groupId>
+			<artifactId>annotations</artifactId>
+		</dependency>
 
-        <dependency>
-            <groupId>org.easymock</groupId>
-            <artifactId>easymock</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <scope>test</scope>
-        </dependency>
+		<dependency>
+			<groupId>org.easymock</groupId>
+			<artifactId>easymock</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
+			<scope>test</scope>
+		</dependency>
 
-    </dependencies>
+	</dependencies>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <compilerArgument>-Xlint:deprecation</compilerArgument>
-                    <source>8</source>
-                    <target>8</target>
-                    <encoding>UTF-8</encoding>
-                </configuration>
-            </plugin>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<compilerArgument>-Xlint:deprecation</compilerArgument>
+					<source>8</source>
+					<target>8</target>
+					<encoding>UTF-8</encoding>
+				</configuration>
+			</plugin>
 
-            <!-- TODO make git remember that the file should be executable -->
-            <!-- skip make for now
-            <plugin>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>1.7</version>
-                <executions>
-                    <execution>
-                        <id>build-native</id>
-                        <phase>process-classes</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <property name="makefile" value="${project.basedir}/${native.source.dir}/Makefile" />
-                                -->
-                                <!-- make it executable -->
-            <!-- skip make for now
-                                <chmod file="${makefile}" perm="u+x" />
-                            </target>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            -->
+			<!-- TODO make git remember that the file should be executable -->
+			<!-- skip make for now
+			<plugin>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>1.7</version>
+				<executions>
+					<execution>
+						<id>build-native</id>
+						<phase>process-classes</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<target>
+								<property name="makefile" value="${project.basedir}/${native.source.dir}/Makefile" />
+								-->
+			<!-- make it executable -->
+			<!-- skip make for now
+								<chmod file="${makefile}" perm="u+x" />
+							</target>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			-->
 
-            <!-- skip make for now
-           <plugin>
-               <groupId>org.codehaus.mojo</groupId>
-               <artifactId>exec-maven-plugin</artifactId>
-               <version>1.2.1</version>
-               <executions>
-                   <execution>
-                       --><!-- this execution happens just after compiling the java classes, and builds the native code. -->
-            <!-- skip make for now
-                       <id>build-native</id>
-                       <phase>process-classes</phase>
-                       <goals>
-                           <goal>exec</goal>
-                       </goals>
-                       <configuration>
-                           <executable>${project.basedir}/${native.source.dir}/Makefile</executable>
-                           <workingDirectory>${project.basedir}/${native.source.dir}</workingDirectory>
-                       </configuration>
-                   </execution>
-               </executions>
-           </plugin> -->
+			<!-- skip make for now
+		   <plugin>
+			   <groupId>org.codehaus.mojo</groupId>
+			   <artifactId>exec-maven-plugin</artifactId>
+			   <version>1.2.1</version>
+			   <executions>
+				   <execution>
+					   --><!-- this execution happens just after compiling the java classes, and builds the native code. -->
+			<!-- skip make for now
+					   <id>build-native</id>
+					   <phase>process-classes</phase>
+					   <goals>
+						   <goal>exec</goal>
+					   </goals>
+					   <configuration>
+						   <executable>${project.basedir}/${native.source.dir}/Makefile</executable>
+						   <workingDirectory>${project.basedir}/${native.source.dir}</workingDirectory>
+					   </configuration>
+				   </execution>
+			   </executions>
+		   </plugin> -->
 
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-scm-publish-plugin</artifactId>
-                <configuration>
-                    <checkoutDirectory>${project.build.directory}/scmpublish/javadoc</checkoutDirectory>
-                    <checkinComment>Publishing javadoc for ${project.artifactId}:${project.version}
-                    </checkinComment>
-                    <content>${project.reporting.outputDirectory}</content>
-                    <skipDeletedFiles>true</skipDeletedFiles>
-                    <pubScmUrl>scm:git:git@github.com:OpenHFT/Java-Thread-Affinity</pubScmUrl>
-                    <scmBranch>gh-pages</scmBranch>
-                </configuration>
-            </plugin>
-            <!--
-                generate maven dependencies versions file that can be used later
-                to install the right bundle in test phase.
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-scm-publish-plugin</artifactId>
+				<configuration>
+					<checkoutDirectory>${project.build.directory}/scmpublish/javadoc</checkoutDirectory>
+					<checkinComment>Publishing javadoc for ${project.artifactId}:${project.version}
+					</checkinComment>
+					<content>${project.reporting.outputDirectory}</content>
+					<skipDeletedFiles>true</skipDeletedFiles>
+					<pubScmUrl>scm:git:git@github.com:OpenHFT/Java-Thread-Affinity</pubScmUrl>
+					<scmBranch>gh-pages</scmBranch>
+				</configuration>
+			</plugin>
+			<!--
+				generate maven dependencies versions file that can be used later
+				to install the right bundle in test phase.
 
-                The file is:
+				The file is:
 
-                    target/classes/META-INF/maven/dependencies.properties
-            -->
-            <plugin>
-                <groupId>org.apache.servicemix.tooling</groupId>
-                <artifactId>depends-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>generate-depends-file</id>
-                        <goals>
-                            <goal>generate-depends-file</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <extensions>true</extensions>
-                <configuration>
-                    <instructions>
-                        <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
-                        <Bundle-Name>OpenHFT :: ${project.artifactId}</Bundle-Name>
-                        <Bundle-Version>${project.version}</Bundle-Version>
-                        <Import-Package>
-                            com.sun.jna.platform.*;resolution:=optional,
-                            *
-                        </Import-Package>
-                        <Export-Package>
-                            net.openhft.affinity.*
-                        </Export-Package>
-                    </instructions>
-                </configuration>
-                <executions>
-                    <!--
-                      This execution makes sure that the manifest is available
-                      when the tests are executed
-                    -->
-                    <execution>
-                        <goals>
-                            <goal>manifest</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
+					target/classes/META-INF/maven/dependencies.properties
+			-->
+			<plugin>
+				<groupId>org.apache.servicemix.tooling</groupId>
+				<artifactId>depends-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>generate-depends-file</id>
+						<goals>
+							<goal>generate-depends-file</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>maven-bundle-plugin</artifactId>
+				<extensions>true</extensions>
+				<configuration>
+					<instructions>
+						<Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
+						<Bundle-Name>OpenHFT :: ${project.artifactId}</Bundle-Name>
+						<Bundle-Version>${project.version}</Bundle-Version>
+						<Import-Package>
+							com.sun.jna.platform.*;resolution:=optional,
+							*
+						</Import-Package>
+						<Export-Package>
+							net.openhft.affinity.*
+						</Export-Package>
+					</instructions>
+				</configuration>
+				<executions>
+					<!--
+					  This execution makes sure that the manifest is available
+					  when the tests are executed
+					-->
+					<execution>
+						<goals>
+							<goal>manifest</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 
-    <!-- todo remove once next parent pom is adopted -->
-    <repositories>
-        <repository>
-            <id>sonatype-nexus-staging</id>
-            <url>https://oss.sonatype.org/content/repositories/staging</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </repository>
-    </repositories>
+	<!-- todo remove once next parent pom is adopted -->
+	<repositories>
+		<repository>
+			<id>sonatype-nexus-staging</id>
+			<url>https://oss.sonatype.org/content/repositories/staging</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+		</repository>
+	</repositories>
 
-    <scm>
-        <url>scm:git:git@github.com/plusterkopp/Java-Thread-Affinity.git</url>
-        <connection>scm:git:git@github.com/plusterkopp/Java-Thread-Affinity.git</connection>
-        <developerConnection>scm:git:git@github.com/plusterkopp/Java-Thread-Affinity.git
-        </developerConnection>
-        <tag>master</tag>
-    </scm>
+	<scm>
+		<url>scm:git:git@github.com/plusterkopp/Java-Thread-Affinity.git</url>
+		<connection>scm:git:git@github.com/plusterkopp/Java-Thread-Affinity.git</connection>
+		<developerConnection>scm:git:git@github.com/plusterkopp/Java-Thread-Affinity.git
+		</developerConnection>
+		<tag>master</tag>
+	</scm>
 
 </project>

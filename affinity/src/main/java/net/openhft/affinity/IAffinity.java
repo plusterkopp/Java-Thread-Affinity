@@ -25,30 +25,38 @@ import java.util.BitSet;
  * @since 29.12.11,  20:14
  */
 public interface IAffinity {
-    /**
-     * @return returns affinity mask for current thread, or null if unknown
-     */
-    BitSet getAffinity();
+	/**
+	 * @return returns affinity mask for current thread, or null if unknown
+	 */
+	BitSet getAffinity();
 
-    /**
-     * @param affinity sets affinity mask of current thread to specified value
-     */
-    void setAffinity(final BitSet affinity);
+	/**
+	 * @param affinity sets affinity mask of current thread to specified value
+	 */
+	void setAffinity(final BitSet affinity);
 
-    /**
-     * @return the current cpu id, or -1 if unknown.
-     */
-    int getCpu();
+	/**
+	 * @param cpuid sets affinity mask to include only this cpu
+	 */
+	default void setAffinity(int cpuid) {
+		Affinity.setAffinity(cpuid);   // default implementation, only good for small machines
+	}
 
-    /**
-     * @return the process id of the current process.
-     */
-    int getProcessId();
+	/**
+	 * @return the current cpu id, or -1 if unknown.
+	 */
+	int getCpu();
 
-    /**
-     * @return the thread id of the current thread or -1 is not available.
-     */
-    int getThreadId();
+	/**
+	 * @return the process id of the current process.
+	 */
+	int getProcessId();
+
+	/**
+	 * @return the thread id of the current thread or -1 is not available.
+	 */
+	int getThreadId();
+
 
 	/** @return a platform-independent default CpuLayout or null, if there really is none */
 //	CpuLayout getDefaultLayout();

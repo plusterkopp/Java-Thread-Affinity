@@ -7,26 +7,26 @@ import net.openhft.affinity.impl.GroupAffinityMask;
  */
 public class NumaNode extends LayoutEntity {
 
-    protected NumaNode(GroupAffinityMask m) {
-        super(m);
-    }
+	protected NumaNode(GroupAffinityMask m) {
+		super(m);
+	}
 
-    public NumaNode(int index, long mask) {
-        super(index, mask);
-    }
+	public NumaNode(int index, long mask) {
+		super(index, mask);
+	}
 
-    public NumaNode( int id) {
-        super( id);
-    }
+	public NumaNode(int id) {
+		super(id);
+	}
 
-    public String toString() {
-        return "N " + super.toString();
-    }
+	public String toString() {
+		return "N " + super.toString();
+	}
 
-    public String getLocation() {
-        if (groupAffinityMask != null) {
-            return groupAffinityMask.getGroupId() + "/" + getId();
-        }
-        return String.valueOf( getId());
-    }
+	public String getLocation() {
+		if (groupAffinityMask != null) {
+			return groupAffinityMask.getGroupId() + "/" + getId();
+		}
+		return String.valueOf(getId());
+	}
 }

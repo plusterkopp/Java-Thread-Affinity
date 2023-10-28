@@ -16,8 +16,12 @@
 
 package net.openhft.affinity.impl;
 
-import net.openhft.affinity.*;
-import org.junit.*;
+import net.openhft.affinity.Affinity;
+import net.openhft.affinity.CpuLayout;
+import net.openhft.affinity.IAffinity;
+import org.junit.Assume;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.util.BitSet;
 
@@ -27,39 +31,39 @@ import static org.junit.Assert.assertEquals;
  * @author peter.lawrey
  */
 public class LinuxJNAAffinityTest extends AbstractAffinityImplTest {
-    @BeforeClass
-    public static void checkJniLibraryPresent() {
-        Assume.assumeTrue("linux".equalsIgnoreCase(System.getProperty("os.name")));
-    }
+	@BeforeClass
+	public static void checkJniLibraryPresent() {
+		Assume.assumeTrue("linux".equalsIgnoreCase(System.getProperty("os.name")));
+	}
 
-    @Override
-    public IAffinity getImpl() {
-        return Affinity.getAffinityImpl();
-    }
+	@Override
+	public IAffinity getImpl() {
+		return Affinity.getAffinityImpl();
+	}
 
-    @Test
-    public void testDefaultLayout() {
-        IAffinity   impl = getImpl();
-        Assume.assumeTrue( "no LinuxJANAffinity", impl instanceof LinuxJNAAffinity);
-        LinuxJNAAffinity    lAff = (LinuxJNAAffinity) impl;
-        CpuLayout   layout = lAff.getDefaultLayout();
-        System.out.println( layout);
-    }
+	@Test
+	public void testDefaultLayout() {
+		IAffinity impl = getImpl();
+		Assume.assumeTrue("no LinuxJANAffinity", impl instanceof LinuxJNAAffinity);
+		LinuxJNAAffinity lAff = (LinuxJNAAffinity) impl;
+		CpuLayout layout = lAff.getDefaultLayout();
+		System.out.println(layout);
+	}
 
-    @Test
-    public void getAffinityReturnsValuePreviouslySet() {
-        final IAffinity impl = getImpl();
-        final BitSet cmask = impl.getAffinity();
-        System.out.println( "current mask: " + cmask);
-        final int cores = CORES;
-        for (int core = 0; core < cores; core++) {
-            final BitSet mask = new BitSet();
-            mask.set(core, true);
-            impl.setAffinity(mask);
-            final BitSet ret_mask = impl.getAffinity();
-            assertEquals(mask, ret_mask);
-        }
-    }
+	@Test
+	public void getAffinityReturnsValuePreviouslySet() {
+		final IAffinity impl = getImpl();
+		final BitSet cmask = impl.getAffinity();
+		System.out.println("current mask: " + cmask);
+		final int cores = CORES;
+		for (int core = 0; core < cores; core++) {
+			final BitSet mask = new BitSet();
+			mask.set(core, true);
+			impl.setAffinity(mask);
+			final BitSet ret_mask = impl.getAffinity();
+			assertEquals(mask, ret_mask);
+		}
+	}
 
 
 }

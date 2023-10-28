@@ -19,6 +19,7 @@ package net.openhft.affinity.impl;
 import com.sun.jna.LastErrorException;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
+import net.openhft.affinity.Affinity;
 import net.openhft.affinity.IAffinity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,51 +30,56 @@ import java.util.BitSet;
 /**
  * This is essentially the same as the NullAffinity implementation but with concrete
  * support for getThreadId().
+ *
  * @author daniel.shaya
  */
 public enum OSXJNAAffinity implements IAffinity {
-    INSTANCE;
-    private static final Logger LOGGER = LoggerFactory.getLogger(OSXJNAAffinity.class);
-    private final ThreadLocal<Integer> THREAD_ID = new ThreadLocal<>();
+	INSTANCE;
+	private static final Logger LOGGER = LoggerFactory.getLogger(OSXJNAAffinity.class);
+	private final ThreadLocal<Integer> THREAD_ID = new ThreadLocal<>();
 
-    @Override
-    public BitSet getAffinity()
-    {
-        return null;
-    }
+	@Override
+	public BitSet getAffinity() {
+		return null;
+	}
 
-    @Override
-    public void setAffinity(final BitSet affinity) {
-        LOGGER.trace("unable to set mask to {} as the JNIa nd JNA libraries and not loaded", Utilities.toHexString(affinity));
-    }
+	@Override
+	public void setAffinity(final BitSet affinity) {
+		LOGGER.trace("unable to set mask to {} as the JNIa nd JNA libraries and not loaded", Utilities.toHexString(affinity));
+	}
 
-    @Override
-    public int getCpu() {
-        return -1;
-    }
+	@Override
+	public void setAffinity(int cpuid) {
+		Affinity.setAffinity(cpuid);   // default implementation, only good for small machines
+	}
 
-    @Override
-    public int getProcessId() {
-        final String name = ManagementFactory.getRuntimeMXBean().getName();
-        return Integer.parseInt(name.split("@")[0]);
-    }
+	@Override
+	public int getCpu() {
+		return -1;
+	}
 
-    @Override
-    public int getThreadId() {
-        Integer tid = THREAD_ID.get();
-        if (tid == null) {
-            tid = CLibrary.INSTANCE.pthread_self();
-            //The tid assumed to be an unsigned 24 bit, see net.openhft.lang.Jvm.getMaxPid()
-            tid = tid & 0xFFFFFF;
-            THREAD_ID.set(tid);
-        }
-        return tid;
-    }
+	@Override
+	public int getProcessId() {
+		final String name = ManagementFactory.getRuntimeMXBean().getName();
+		return Integer.parseInt(name.split("@")[0]);
+	}
 
-    interface CLibrary extends Library {
-        CLibrary INSTANCE = (CLibrary)
-                Native.loadLibrary("libpthread.dylib", CLibrary.class);
+	@Override
+	public int getThreadId() {
+		Integer tid = THREAD_ID.get();
+		if (tid == null) {
+			tid = CLibrary.INSTANCE.pthread_self();
+			//The tid assumed to be an unsigned 24 bit, see net.openhft.lang.Jvm.getMaxPid()
+			tid = tid & 0xFFFFFF;
+			THREAD_ID.set(tid);
+		}
+		return tid;
+	}
 
-        int pthread_self() throws LastErrorException;
-    }
+	interface CLibrary extends Library {
+		CLibrary INSTANCE = (CLibrary)
+				Native.loadLibrary("libpthread.dylib", CLibrary.class);
+
+		int pthread_self() throws LastErrorException;
+	}
 }

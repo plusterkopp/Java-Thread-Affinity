@@ -30,7 +30,7 @@ public class AffinityManager {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(AffinityManager.class);
 
-	final private CpuLayout   cpuLayout;
+	final private CpuLayout cpuLayout;
 
 	private AffinityManager() {
 		cpuLayout = initLayout();
@@ -83,7 +83,7 @@ public class AffinityManager {
 		int count = 0;
 		CpuLayout fallbackLayout = new NoCpuLayout(Runtime.getRuntime().availableProcessors());
 		// try to guard against spurios JNA Errors shown above. In that case, we retry up to 3 times
-		while ( ++count <= 3) {
+		while (++count <= 3) {
 			try {
 				CpuLayout layout = fallbackLayout;
 				IAffinity impl = Affinity.getAffinityImpl();
@@ -100,8 +100,8 @@ public class AffinityManager {
 					}
 				}
 				return layout;
-			} catch ( Throwable t) {
-				LOGGER.error( "can not initialize layout round " + count, t);
+			} catch (Throwable t) {
+				LOGGER.error("can not initialize layout round " + count, t);
 			}
 		}
 		return fallbackLayout;
@@ -113,24 +113,25 @@ public class AffinityManager {
 
 	/**
 	 * try to bind the current thread to a socket
+	 *
 	 * @param socketId id of socket
 	 * @return true if the current cpu after the call is one the desired socket, or false
 	 */
-	public boolean bindToSocket( int socketId) {
-		if ( cpuLayout instanceof VanillaCpuLayout) {
+	public boolean bindToSocket(int socketId) {
+		if (cpuLayout instanceof VanillaCpuLayout) {
 			VanillaCpuLayout v = (VanillaCpuLayout) cpuLayout;
 			try {
 				Socket socket = v.packages.get(socketId);
-				return bindToSocket( socket);
-			} catch ( IndexOutOfBoundsException e) {
+				return bindToSocket(socket);
+			} catch (IndexOutOfBoundsException e) {
 				return false;
 			}
 		}
 		return false;
 	}
 
-	public boolean bindToSocket( Socket socket) {
-		if ( cpuLayout instanceof VanillaCpuLayout) {
+	public boolean bindToSocket(Socket socket) {
+		if (cpuLayout instanceof VanillaCpuLayout) {
 			VanillaCpuLayout w = (VanillaCpuLayout) cpuLayout;
 			socket.bind();
 			int cpuId = Affinity.getCpu();
@@ -138,26 +139,26 @@ public class AffinityManager {
 			if (currentSocketId == socket.getId()) {
 				return true;
 			}
-			ICpuInfo current = w.getCPUInfo( cpuId);
-			BitSet  desired = (BitSet) socket.getBitMask().clone();
+			ICpuInfo current = w.getCPUInfo(cpuId);
+			BitSet desired = (BitSet) socket.getBitMask().clone();
 			Socket currentSocket = w.packages.stream()
-				.filter( s -> s.getId() == currentSocketId)
-				.findFirst()
-				.get();
-			BitSet  ofCurrentSocket = (BitSet) currentSocket.getBitMask().clone();
-			ofCurrentSocket.and( desired);
-			System.err.print( "can not bind: " + socket + ", bound to " + currentSocket + " masks intersect at " + ofCurrentSocket) ;
+					.filter(s -> s.getId() == currentSocketId)
+					.findFirst()
+					.get();
+			BitSet ofCurrentSocket = (BitSet) currentSocket.getBitMask().clone();
+			ofCurrentSocket.and(desired);
+			System.err.print("can not bind: " + socket + ", bound to " + currentSocket + " masks intersect at " + ofCurrentSocket);
 		}
 		return false;
 	}
 
 	public boolean bindToCore(int coreId) {
-		if ( cpuLayout instanceof VanillaCpuLayout) {
+		if (cpuLayout instanceof VanillaCpuLayout) {
 			VanillaCpuLayout w = (VanillaCpuLayout) cpuLayout;
 			try {
 				Core core = w.cores.get(coreId);
 				return bindToCore(core);
-			} catch ( IndexOutOfBoundsException e) {
+			} catch (IndexOutOfBoundsException e) {
 				return false;
 			}
 		}
@@ -165,11 +166,11 @@ public class AffinityManager {
 	}
 
 	public boolean bindToCore(Core core) {
-		if ( cpuLayout instanceof VanillaCpuLayout) {
+		if (cpuLayout instanceof VanillaCpuLayout) {
 			VanillaCpuLayout w = (VanillaCpuLayout) cpuLayout;
 			core.bind();
-			int	cpuId = Affinity.getCpu();
-			if ( cpuLayout.coreId(cpuId) == core.getId()) {
+			int cpuId = Affinity.getCpu();
+			if (cpuLayout.coreId(cpuId) == core.getId()) {
 				return true;
 			}
 		}
@@ -178,12 +179,12 @@ public class AffinityManager {
 
 	public boolean bindToGroup(int id) {
 		// implement for Windows case first, generalize when interfaces become available for VanillaLayout, too
-		if ( cpuLayout instanceof WindowsCpuLayout) {
+		if (cpuLayout instanceof WindowsCpuLayout) {
 			WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
 			try {
-				Group entity = w.groups.get( id);
+				Group entity = w.groups.get(id);
 				return bindToGroup(entity);
-			} catch ( IndexOutOfBoundsException e) {
+			} catch (IndexOutOfBoundsException e) {
 				return false;
 			}
 		}
@@ -192,11 +193,11 @@ public class AffinityManager {
 
 	public boolean bindToGroup(Group entity) {
 		// implement for Windows case first, generalize when interfaces become available for VanillaLayout, too
-		if ( cpuLayout instanceof WindowsCpuLayout) {
+		if (cpuLayout instanceof WindowsCpuLayout) {
 			WindowsCpuLayout w = (WindowsCpuLayout) cpuLayout;
 			entity.bind();
-			int	cpuId = Affinity.getCpu();
-			if ( w.groupId(cpuId) == entity.getId()) {
+			int cpuId = Affinity.getCpu();
+			if (w.groupId(cpuId) == entity.getId()) {
 				return true;
 			}
 		}
@@ -221,7 +222,7 @@ public class AffinityManager {
 		if (cpuLayout instanceof NumaCpuLayout) {
 			NumaCpuLayout layout = (NumaCpuLayout) cpuLayout;
 			node.bind();
-			int	cpuId = Affinity.getCpu();
+			int cpuId = Affinity.getCpu();
 			if (layout.numaNodeId(cpuId) == node.getId()) {
 				return true;
 			}
@@ -243,12 +244,12 @@ public class AffinityManager {
 //	}
 
 	public boolean bindToCache(Cache cache) {
-		if ( cpuLayout instanceof CacheCpuLayout) {
+		if (cpuLayout instanceof CacheCpuLayout) {
 			CacheCpuLayout l = (CacheCpuLayout) cpuLayout;
 			cache.bind();
-			int	cpuId = Affinity.getCpu();
+			int cpuId = Affinity.getCpu();
 			List<Cache> caches = l.getCaches(cpuId);
-			if ( ! caches.contains( cache)) {
+			if (!caches.contains(cache)) {
 //				Core core = ( ( WindowsCpuLayout) cpuLayout).cores.get( cpuLayout.coreId( cpuId));
 				return false;
 			}
@@ -257,8 +258,8 @@ public class AffinityManager {
 		return false;
 	}
 
-	public void visitEntities( Consumer<LayoutEntity> visitor) {
-		if ( cpuLayout instanceof VanillaCpuLayout) {
+	public void visitEntities(Consumer<LayoutEntity> visitor) {
+		if (cpuLayout instanceof VanillaCpuLayout) {
 			VanillaCpuLayout v = (VanillaCpuLayout) cpuLayout;
 			if (cpuLayout instanceof GroupedCpuLayout) {
 				GroupedCpuLayout gl = (GroupedCpuLayout) cpuLayout;
@@ -268,21 +269,21 @@ public class AffinityManager {
 				NumaCpuLayout nl = (NumaCpuLayout) cpuLayout;
 				nl.getNodes().forEach(visitor);
 			}
-			v.packages.forEach( visitor);
-			v.cores.forEach( visitor);
+			v.packages.forEach(visitor);
+			v.cores.forEach(visitor);
 		}
-		if ( cpuLayout instanceof CacheCpuLayout) {
+		if (cpuLayout instanceof CacheCpuLayout) {
 			CacheCpuLayout l = (CacheCpuLayout) cpuLayout;
 			List<Cache> caches = l.getCaches();
-			caches.forEach( visitor);
+			caches.forEach(visitor);
 		}
 	}
 
 	public void unregisterFromOthers(LayoutEntity current, Thread t) {
-		if ( cpuLayout instanceof VanillaCpuLayout) {
+		if (cpuLayout instanceof VanillaCpuLayout) {
 			VanillaCpuLayout w = (VanillaCpuLayout) cpuLayout;
-			visitEntities( e -> {
-				if ( e != current) {
+			visitEntities(e -> {
+				if (e != current) {
 					e.unregister(t);
 				}
 			});
@@ -294,36 +295,36 @@ public class AffinityManager {
 	}
 
 	public Socket getSocket(int i) {
-		if ( cpuLayout instanceof VanillaCpuLayout) {
+		if (cpuLayout instanceof VanillaCpuLayout) {
 			VanillaCpuLayout vcpul = (VanillaCpuLayout) cpuLayout;
-			return vcpul.packages.get( i);
+			return vcpul.packages.get(i);
 		}
 		return null;
 	}
 
 	public Core getCore(int i) {
-		if ( cpuLayout instanceof VanillaCpuLayout) {
+		if (cpuLayout instanceof VanillaCpuLayout) {
 			VanillaCpuLayout vcpul = (VanillaCpuLayout) cpuLayout;
-			return vcpul.cores.get( i);
+			return vcpul.cores.get(i);
 		}
 		return null;
 	}
 
 	public NumaNode getNode(int i) {
-		if ( cpuLayout instanceof NumaCpuLayout) {
+		if (cpuLayout instanceof NumaCpuLayout) {
 			NumaCpuLayout nl = (NumaCpuLayout) cpuLayout;
-			return nl.getNodes().get( i);
+			return nl.getNodes().get(i);
 		}
 		return null;
 	}
 
 	public List<LayoutEntity> getBoundTo(Thread thread) {
-		if ( cpuLayout instanceof VanillaCpuLayout) {
+		if (cpuLayout instanceof VanillaCpuLayout) {
 			List<LayoutEntity> result = new ArrayList<>(1);
 			Consumer<LayoutEntity> addIfHasThread = (entity) -> {
 				List<Thread> entityThreads = entity.getThreads();
-				if ( entityThreads.contains( thread)) {
-					result.add( entity);
+				if (entityThreads.contains(thread)) {
+					result.add(entity);
 				}
 			};
 			visitEntities(addIfHasThread);
@@ -336,10 +337,10 @@ public class AffinityManager {
 
 	public void dumpLayout() {
 		StringBuilder sb = new StringBuilder();
-		System.out.print( sb);
+		System.out.print(sb);
 	}
 
-	public void dumpLayout( StringBuilder sb) {
+	public void dumpLayout(StringBuilder sb) {
 		SortedSet<LayoutEntity> sortedEntities = new TreeSet<LayoutEntity>((a, b) -> {
 			GroupAffinityMask gamA = a.getGroupMask();
 			GroupAffinityMask gamB = b.getGroupMask();
@@ -361,7 +362,7 @@ public class AffinityManager {
 				if (b instanceof Core) {
 					return 1;
 				}
-			} else {	// should be hierarchical. Linux doesn't assign SMT bits next to each other.
+			} else {    // should be hierarchical. Linux doesn't assign SMT bits next to each other.
 				BitSet bsA = a.getBitMask();
 				long[] longBitsA = bsA.toLongArray();
 				BitSet bsB = b.getBitMask();
@@ -370,7 +371,7 @@ public class AffinityManager {
 					long maskA = longBitsA[i];
 					long maskB = longBitsB[i];
 					if (maskA != maskB) {
-						return -Long.compareUnsigned( maskA, maskB);
+						return -Long.compareUnsigned(maskA, maskB);
 					}
 					// Caches kennen wir hier nicht :(
 				}
@@ -378,7 +379,7 @@ public class AffinityManager {
 			}
 			return Integer.compare(Objects.hashCode(a), Objects.hashCode(b));
 		});
-		visitEntities( e -> sortedEntities.add( e));
-		sortedEntities.forEach( e -> sb.append( e.getClass().getSimpleName() + ": " + e + "\n"));
+		visitEntities(e -> sortedEntities.add(e));
+		sortedEntities.forEach(e -> sb.append(e.getClass().getSimpleName() + ": " + e + "\n"));
 	}
 }

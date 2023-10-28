@@ -25,32 +25,32 @@ import net.openhft.ticker.impl.SystemClock;
  * @author Peter.Lawrey
  */
 public final class Ticker {
-    public static final ITicker INSTANCE;
+	public static final ITicker INSTANCE;
 
-    static {
-        if (JNIClock.LOADED) {
-            INSTANCE = JNIClock.INSTANCE;
-        } else {
-            INSTANCE = SystemClock.INSTANCE;
-        }
-    }
+	static {
+		if (JNIClock.LOADED) {
+			INSTANCE = JNIClock.INSTANCE;
+		} else {
+			INSTANCE = SystemClock.INSTANCE;
+		}
+	}
 
-    /**
-     * @return The current value of the system timer, in nanoseconds.
-     */
-    public static long ticks() {
-        return INSTANCE.ticks();
-    }
+	/**
+	 * @return The current value of the system timer, in nanoseconds.
+	 */
+	public static long ticks() {
+		return INSTANCE.ticks();
+	}
 
-    public static long nanoTime() {
-        return toNanos(ticks());
-    }
+	public static long nanoTime() {
+		return toNanos(ticks());
+	}
 
-    public static long toNanos(long ticks) {
-        return INSTANCE.toNanos(ticks);
-    }
+	public static long toNanos(long ticks) {
+		return INSTANCE.toNanos(ticks);
+	}
 
-    public static double toMicros(long ticks) {
-        return INSTANCE.toMicros(ticks);
-    }
+	public static double toMicros(long ticks) {
+		return INSTANCE.toMicros(ticks);
+	}
 }

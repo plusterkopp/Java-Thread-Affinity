@@ -1,8 +1,10 @@
 package net.openhft.affinity.impl;
 
-import net.openhft.affinity.*;
+import net.openhft.affinity.IGroupCpuInfo;
+import net.openhft.affinity.INumaCpuInfo;
 import net.openhft.affinity.impl.LayoutEntities.NumaNode;
-import org.jetbrains.annotations.*;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * add numaId, groupId
@@ -12,7 +14,8 @@ class WindowsCpuInfo extends ApicCpuInfo implements IGroupCpuInfo, INumaCpuInfo 
 	private int groupId = 0;
 	private long mask = 0;
 
-	WindowsCpuInfo() {}
+	WindowsCpuInfo() {
+	}
 
 	@NotNull
 	@Override

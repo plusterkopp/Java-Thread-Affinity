@@ -17,7 +17,6 @@
 package net.openhft.affinity;
 
 import net.openhft.affinity.impl.VanillaCpuLayout;
-import net.openhft.affinity.impl.WindowsCpuLayout;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -29,10 +28,10 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public interface IDefaultLayoutAffinity {
 
-    AtomicReference<VanillaCpuLayout> DefaultLayoutAR = new AtomicReference<VanillaCpuLayout>();
+	AtomicReference<VanillaCpuLayout> DefaultLayoutAR = new AtomicReference<VanillaCpuLayout>();
 
-    /**
-     * @return determine and return system CPU layout or null, if no layout can be determined
-     */
-   CpuLayout getDefaultLayout();
+	/**
+	 * @return determine and return system CPU layout or null, if no layout can be determined
+	 */
+	CpuLayout getDefaultLayout();
 }

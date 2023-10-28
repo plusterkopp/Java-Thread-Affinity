@@ -29,51 +29,51 @@ import java.util.BitSet;
 /**
  * This is essentially the same as the NullAffinity implementation but with concrete
  * support for getThreadId().
+ *
  * @author daniel.shaya
  */
 public enum SolarisJNAAffinity implements IAffinity {
-    INSTANCE;
-    private static final Logger LOGGER = LoggerFactory.getLogger(SolarisJNAAffinity.class);
-    private final ThreadLocal<Integer> THREAD_ID = new ThreadLocal<>();
+	INSTANCE;
+	private static final Logger LOGGER = LoggerFactory.getLogger(SolarisJNAAffinity.class);
+	private final ThreadLocal<Integer> THREAD_ID = new ThreadLocal<>();
 
-    @Override
-    public BitSet getAffinity()
-    {
-        return null;
-    }
+	@Override
+	public BitSet getAffinity() {
+		return null;
+	}
 
-    @Override
-    public void setAffinity(final BitSet affinity) {
-        LOGGER.trace("unable to set mask to {} as the JNIa nd JNA libraries and not loaded", Utilities.toHexString(affinity));
-    }
+	@Override
+	public void setAffinity(final BitSet affinity) {
+		LOGGER.trace("unable to set mask to {} as the JNIa nd JNA libraries and not loaded", Utilities.toHexString(affinity));
+	}
 
-    @Override
-    public int getCpu() {
-        return -1;
-    }
+	@Override
+	public int getCpu() {
+		return -1;
+	}
 
-    @Override
-    public int getProcessId() {
-        final String name = ManagementFactory.getRuntimeMXBean().getName();
-        return Integer.parseInt(name.split("@")[0]);
-    }
+	@Override
+	public int getProcessId() {
+		final String name = ManagementFactory.getRuntimeMXBean().getName();
+		return Integer.parseInt(name.split("@")[0]);
+	}
 
-    @Override
-    public int getThreadId() {
-        Integer tid = THREAD_ID.get();
-        if (tid == null) {
-            tid = CLibrary.INSTANCE.pthread_self();
-            //The tid assumed to be an unsigned 24 bit, see net.openhft.lang.Jvm.getMaxPid()
-            tid = tid & 0xFFFFFF;
-            THREAD_ID.set(tid);
-        }
-        return tid;
-    }
+	@Override
+	public int getThreadId() {
+		Integer tid = THREAD_ID.get();
+		if (tid == null) {
+			tid = CLibrary.INSTANCE.pthread_self();
+			//The tid assumed to be an unsigned 24 bit, see net.openhft.lang.Jvm.getMaxPid()
+			tid = tid & 0xFFFFFF;
+			THREAD_ID.set(tid);
+		}
+		return tid;
+	}
 
-    interface CLibrary extends Library {
-        CLibrary INSTANCE = (CLibrary)
-                Native.loadLibrary("c", CLibrary.class);
+	interface CLibrary extends Library {
+		CLibrary INSTANCE = (CLibrary)
+				Native.loadLibrary("c", CLibrary.class);
 
-        int pthread_self() throws LastErrorException;
-    }
+		int pthread_self() throws LastErrorException;
+	}
 }
