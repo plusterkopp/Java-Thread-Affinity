@@ -65,7 +65,7 @@ class LockInventory {
 			final boolean base = AffinityLock.BASE_AFFINITY.get(i);
 			final boolean reservable = AffinityLock.RESERVED_AFFINITY.get(i);
 
-			LOGGER.trace("cpu " + i + " base={} reservable= {}", i, base, reservable);
+			LOGGER.trace("cpu " + i + " base={} reservable= {}", base, reservable);
 			AffinityLock lock = logicalCoreLocks[i] = newLock(i, base, reservable);
 
 			int layoutId = lock.cpuId();
@@ -80,10 +80,10 @@ class LockInventory {
 
 	/**
 	 * useful only with {@link AffinityStrategies#DIFFERENT_CORE} or {@link AffinityStrategies#DIFFERENT_SOCKET}. Falls
-	 * back to {@link #acquireLock()} if no suitable {@link AffinityLock} found. {@link AffinityStrategies#SAME_SOCKET}
+	 * back to {@link AffinityLock#acquireLock()} if no suitable {@link AffinityLock} found. {@link AffinityStrategies#SAME_SOCKET}
 	 * and {@link AffinityStrategies#SAME_CORE} are valid arguments, too, but make no sense with more than one cpuId
 	 *
-	 * @param bind     see {@link #assignCurrentThread(boolean, boolean)}
+	 * @param bind     see {@link AffinityLock#assignCurrentThread(boolean, boolean)}
 	 * @param strategy {@link AffinityStrategy}
 	 * @param cpuIds   list of cpuIds whose core/socket we must avoid
 	 * @return matching {@link AffinityLock}
@@ -132,9 +132,13 @@ class LockInventory {
 		for (AffinityStrategy strategy : strategies) {
 			LOOP:
 			for (AffinityLock[] als : physicalCoreLocks.descendingMap().values()) {
-				for (AffinityLock al : als)
-					if (!al.canReserve() || !strategy.matches(cpuId, al.cpuId()))
-						continue LOOP;
+				for (AffinityLock al : als) {
+					if (al != null) {
+						if (!al.canReserve() || !strategy.matches(cpuId, al.cpuId())) {
+							continue LOOP;
+						}
+					}
+				}
 
 				final AffinityLock al = als[0];
 				al.assignCurrentThread(bind, true);

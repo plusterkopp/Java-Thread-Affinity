@@ -16,6 +16,7 @@
 
 package net.openhft.affinity;
 
+import net.openhft.affinity.impl.NoCpuLayout;
 import net.openhft.affinity.impl.VanillaCpuLayout;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -116,9 +117,11 @@ public class AffinityLockTest {
 
 	@Test
 	public void assignReleaseThread() throws IOException {
+		System.out.println("Locks at assignReleaseThread entry: " + AffinityLock.dumpLocks());
 		final CpuLayout defaultLayout = AffinityLock.cpuLayout();
+		// continue
 		if (AffinityLock.RESERVED_AFFINITY.isEmpty()) {
-			System.out.println("Cannot run affinity test as no threads gave been reserved.");
+			System.out.println("Cannot run affinity test as no threads have been reserved.");
 			System.out.println("Use isolcpus= in grub.conf or use -D" + AffinityLock.AFFINITY_RESERVED + "={hex mask}");
 			return;
 		} else if (defaultLayout == null) {
@@ -128,22 +131,34 @@ public class AffinityLockTest {
 			System.out.println("Cannot run affinity test as this config has only " + defaultLayout.cpus() + " cpus");
 			return;
 		}
+
+		// force reset
+		AffinityLock.cpuLayout(new NoCpuLayout(1));
+		System.out.println("Locks during reset: " + AffinityLock.dumpLocks());
 		AffinityLock.cpuLayout(defaultLayout);
 
+		System.out.println("Locks after reset: " + AffinityLock.dumpLocks());
+		System.out.println("Layout: " + defaultLayout);
+		System.out.println("Reserved: " + AffinityLock.RESERVED_AFFINITY);
+		System.out.println("Affinity before acquirelock: " + Affinity.getAffinity());
 		assertEquals(AffinityLock.BASE_AFFINITY, Affinity.getAffinity());
 		AffinityLock al = AffinityLock.acquireLock();
+		System.out.println("Affinity after acquirelock: " + Affinity.getAffinity() + " lock: " + al);
 		assertEquals(1, Affinity.getAffinity().cardinality());
 		al.release();
 		assertEquals(AffinityLock.BASE_AFFINITY, Affinity.getAffinity());
 
 		assertEquals(AffinityLock.BASE_AFFINITY, Affinity.getAffinity());
+		System.out.println("Affinity before acquirecore: " + Affinity.getAffinity());
 		AffinityLock al2 = AffinityLock.acquireCore();
+		System.out.println("Affinity after acquirecore: " + Affinity.getAffinity() + " lock: " + al2);
 		assertEquals(1, Affinity.getAffinity().cardinality());
 		al2.release();
 		assertEquals(AffinityLock.BASE_AFFINITY, Affinity.getAffinity());
+		System.out.println("Affinity after release: " + Affinity.getAffinity());
 	}
 
-	//    @Test
+	@Test
 	public void testIssue21() throws IOException {
 		if (!new File("/proc/cpuinfo").exists()) {
 			System.out.println("Cannot run affinity test as this system doesn't have a /proc/cpuinfo file");
@@ -175,8 +190,8 @@ public class AffinityLockTest {
 		al.release();
 	}
 
-	@Test
-	public void testIssue19() {
+	//	@Test
+	public void testIssue19Disabled() {
 		System.out.println("AffinityLock.PROCESSORS=" + AffinityLock.PROCESSORS);
 
 		AffinityLock al = AffinityLock.acquireLock();

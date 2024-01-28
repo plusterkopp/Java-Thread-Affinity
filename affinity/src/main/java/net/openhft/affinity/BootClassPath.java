@@ -27,7 +27,7 @@ import java.net.URL;
 enum BootClassPath {
 	INSTANCE;
 
-	private final URLClassPath bootClassPath = new URLClassPath(getBootClassPathURLs());
+	private final URLClassPath bootClassPath = new URLClassPath(getBootClassPathURLs(), null);
 
 	public final boolean has(String binaryClassName) {
 		String resourceClassName = binaryClassName.replace('.', '/').concat(".class");
