@@ -63,4 +63,9 @@ public class NoCpuLayout implements CpuLayout {
 	public int threadId(int cpuId) {
 		return 0;
 	}
+
+	@Override
+	public int threadsPerCore(int physicalCore) {
+		return threadsPerCore();
+	}
 }

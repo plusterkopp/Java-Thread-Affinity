@@ -72,7 +72,9 @@ class LockInventory {
 			int physicalCore = toPhysicalCore(layoutId);
 			AffinityLock[] locks = physicalCoreLocks.get(physicalCore);
 			if (locks == null) {
-				physicalCoreLocks.put(physicalCore, locks = new AffinityLock[cpuLayout.threadsPerCore()]);
+				// perhaps not all core can run the same number of threads
+				int threadCount = cpuLayout.threadsPerCore(physicalCore);
+				physicalCoreLocks.put(physicalCore, locks = new AffinityLock[threadCount]);
 			}
 			locks[cpuLayout.threadId(layoutId)] = lock;
 		}
@@ -158,7 +160,8 @@ class LockInventory {
 		}
 
 		int core = toPhysicalCore(logicalCoreID);
-		for (AffinityLock al : physicalCoreLocks.get(core)) {
+		AffinityLock[] affinityLocks = physicalCoreLocks.get(core);
+		for (AffinityLock al : affinityLocks) {
 			if (al.isBound() && al.assignedThread != null && al.assignedThread.isAlive()) {
 				LOGGER.warn("cpu {} already bound to {}", al.cpuId(), al.assignedThread);
 
@@ -171,7 +174,7 @@ class LockInventory {
 		if (LOGGER.isInfoEnabled()) {
 			StringBuilder sb = new StringBuilder().append("Assigning core ").append(core);
 			String sep = ": cpus ";
-			for (AffinityLock al : physicalCoreLocks.get(core)) {
+			for (AffinityLock al : affinityLocks) {
 				sb.append(sep).append(al.cpuId());
 				sep = ", ";
 			}
@@ -210,11 +213,11 @@ class LockInventory {
 
 	private void reset(CpuLayout cpuLayout) {
 		this.cpuLayout = cpuLayout;
-		this.logicalCoreLocks = new AffinityLock[cpuLayout.cpus()];
-		this.physicalCoreLocks.clear();
+		logicalCoreLocks = new AffinityLock[cpuLayout.cpus()];
+		physicalCoreLocks.clear();
 	}
 
 	private int toPhysicalCore(int layoutId) {
-		return cpuLayout.socketId(layoutId) * cpuLayout.coresPerSocket() + cpuLayout.coreId(layoutId);
+		return cpuLayout.coreId(layoutId); // cpuLayout.socketId(layoutId) * cpuLayout.coresPerSocket() + cpuLayout.coreId(layoutId);
 	}
 }

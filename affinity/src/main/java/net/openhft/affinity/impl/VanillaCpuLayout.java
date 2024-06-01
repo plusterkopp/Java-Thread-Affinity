@@ -244,6 +244,19 @@ public class VanillaCpuLayout implements CpuLayout {
 		return cpuDetails.get(cpuId).getThreadId();
 	}
 
+	@Override
+	public int threadsPerCore(int physicalCore) {
+		// examine all cpus, count all that are on this physicalCore
+		int tpc = 0;
+		for (int i = 0, cpuDetailsSize = cpuDetails.size(); i < cpuDetailsSize; i++) {
+			ICpuInfo cpuDetail = cpuDetails.get(i);
+			if (cpuDetail.getCoreId() == physicalCore) {
+				tpc++;
+			}
+		}
+		return tpc;
+	}
+
 	@NotNull
 	@Override
 	public String toString() {

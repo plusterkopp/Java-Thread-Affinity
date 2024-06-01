@@ -49,5 +49,13 @@ public interface CpuLayout {
 	 */
 	int threadId(int cpuId);
 
+	/**
+	 * not all cores are created equal, therefore, we must allow for different thread count per core
+	 *
+	 * @param physicalCore
+	 * @return numbers of threads that core can accomodate
+	 */
+	int threadsPerCore(int physicalCore);
+
 //    ICpuInfo getCPUInfo( int cpuId);
 }
