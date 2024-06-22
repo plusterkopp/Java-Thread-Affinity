@@ -162,6 +162,10 @@ class LockInventory {
 		int core = toPhysicalCore(logicalCoreID);
 		AffinityLock[] affinityLocks = physicalCoreLocks.get(core);
 		for (AffinityLock al : affinityLocks) {
+			if (al == null) {
+				LOGGER.error( "no lock for lcpu {} on core {}", logicalCoreID, core);
+				continue;
+			}
 			if (al.isBound() && al.assignedThread != null && al.assignedThread.isAlive()) {
 				LOGGER.warn("cpu {} already bound to {}", al.cpuId(), al.assignedThread);
 

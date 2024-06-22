@@ -15,7 +15,7 @@ import java.util.stream.Stream;
  * Provides another method to define a layout using a simple string.
  * Created by ralf h on 23.01.2014.
  */
-public class WindowsCpuLayout extends VanillaCpuLayout implements NumaCpuLayout, GroupedCpuLayout, CacheCpuLayout {
+public class WindowsCpuLayout extends ApicCpuLayout implements NumaCpuLayout, GroupedCpuLayout, CacheCpuLayout {
 
 	private final List<WindowsCpuInfo> cpuDetailsFull;
 	private final Map<Integer, WindowsCpuInfo> cpuDetailsByApic = new HashMap<>();
