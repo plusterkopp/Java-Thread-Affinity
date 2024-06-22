@@ -179,6 +179,10 @@ class LockInventory {
 			StringBuilder sb = new StringBuilder().append("Assigning core ").append(core);
 			String sep = ": cpus ";
 			for (AffinityLock al : affinityLocks) {
+				if (al == null) {
+					LOGGER.error( "no lock for lcpu {} on core {}", logicalCoreID, core);
+					continue;
+				}
 				sb.append(sep).append(al.cpuId());
 				sep = ", ";
 			}
