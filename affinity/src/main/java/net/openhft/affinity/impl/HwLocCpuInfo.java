@@ -3,6 +3,8 @@ package net.openhft.affinity.impl;
 import net.openhft.affinity.INumaCpuInfo;
 import net.openhft.affinity.impl.LayoutEntities.*;
 
+import java.util.BitSet;
+
 public class HwLocCpuInfo extends ApicCpuInfo implements INumaCpuInfo {
 
 	NumaNode node;
@@ -27,7 +29,11 @@ public class HwLocCpuInfo extends ApicCpuInfo implements INumaCpuInfo {
 		// set bitmasks in entities to contain my apidID
 		LayoutEntity[] entities = {core, socket, numaNode, l1DCache, l1ICache, l2Cache, l3Cache};
 		for (LayoutEntity entity : entities) {
-			entity.getBitMask().set(apicID);
+			if (entity == null) {
+				continue;
+			}
+			BitSet bitMask = entity.getBitMask();
+			bitMask.set(apicID);
 		}
 	}
 

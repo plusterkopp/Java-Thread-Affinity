@@ -62,6 +62,7 @@ public class HwLocCpuLayout extends VanillaCpuLayout implements NumaCpuLayout, C
 		packages = Collections.unmodifiableList(new ArrayList<>(socketList));
 		cores = Collections.unmodifiableList(new ArrayList<>(coreList));
 
+		cacheSet.removeIf( c -> c == null);
 		caches = Collections.unmodifiableList(new ArrayList<>(cacheSet));
 		caches.forEach(cache -> cache.setLayout(this));
 	}
