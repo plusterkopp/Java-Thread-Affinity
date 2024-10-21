@@ -45,4 +45,9 @@ public class Socket extends LayoutEntity {
 		return (node == null ? "" : node.getLocation() + "/") + getId();
 	}
 
+	@Override
+	public String getTypeName() {
+		return "S";
+	}
+
 }

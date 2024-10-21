@@ -112,6 +112,14 @@ public class Cache extends LayoutEntity {
 		return "" + groupAffinityMask;
 	}
 
+	@Override
+	public String getTypeName() {
+		if (CacheType.UNIFIED == type) {
+			return "L" + getLevel();
+		}
+		return "L" + getLevel() + type.shortName();
+	}
+
 	private String getLocation(WindowsCpuLayout layout) {
 		if (locationCache != null) {
 			return locationCache;

@@ -15,6 +15,7 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
 	final GroupAffinityMask groupAffinityMask;  // only for Windows, when set, bitsetMask must be null
 	final BitSet bitsetMask; // if set, groupAffinityMask must be null
 	private int id;
+	private int countInLayout;
 
 	protected LayoutEntity(int groupID, long mask) {
 		this(new GroupAffinityMask(groupID, mask));
@@ -196,5 +197,54 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
 			return false;
 		}
 		return (mask & groupAffinityMask.getMask()) != 0;
+	}
+
+	public boolean fullyContains(LayoutEntity le) {
+		GroupAffinityMask thisGM = getGroupMask();
+		GroupAffinityMask otherGM = le.getGroupMask();
+		if (thisGM != null && otherGM != null) {
+			if (thisGM.getGroupId() != otherGM.getGroupId()) {
+				return false;
+			}
+			long thisMask = thisGM.getMask();
+			long otherMask = otherGM.getMask();
+			if (thisMask == otherMask) {
+				return true;
+			}
+			// for every bit in O, T: O→T must hold, O→T == not(O) or T. So when we compute this, the negation must be 0
+			long ifOtherThenThis = thisMask | ~otherMask;
+			long ifOtherThenThisFlipped = ~ifOtherThenThis;
+			return ifOtherThenThisFlipped == 0;
+		}
+		BitSet thisBS = getBitMask();
+		BitSet otherBS = le.getBitMask();
+		if (thisBS.equals(otherBS)) {
+			return true;
+		}
+		long[] otherLA = otherBS.toLongArray();
+		long[] thisLA = thisBS.toLongArray();
+		for (int i = 0; i < otherLA.length; i++) {
+			long thisLong = thisLA[i];
+			long otherLong = otherLA[i];
+			if (thisLong == otherLong) {
+				continue;
+			}
+			long ifOtherThenThis = thisLong | ~otherLong;
+			long ifOtherThenThisFlipped = ~ifOtherThenThis;
+			if (ifOtherThenThisFlipped != 0) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	public abstract String getTypeName();
+
+	public void setCountInLayout(int count) {
+		countInLayout = count;
+	}
+
+	public int getCountInLayout() {
+		return countInLayout;
 	}
 }

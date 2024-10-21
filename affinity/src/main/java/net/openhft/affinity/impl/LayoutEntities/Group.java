@@ -33,4 +33,9 @@ public class Group extends LayoutEntity {
 		}
 		return 0;
 	}
+
+	public String getTypeName() {
+		return "G";
+	}
+
 }

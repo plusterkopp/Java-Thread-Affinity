@@ -29,4 +29,9 @@ public class NumaNode extends LayoutEntity {
 		}
 		return String.valueOf(getId());
 	}
+
+	public String getTypeName() {
+		return "N";
+	}
+
 }

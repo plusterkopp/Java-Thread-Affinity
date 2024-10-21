@@ -7,8 +7,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -34,7 +32,7 @@ public class WindowsCpuLayout extends ApicCpuLayout implements NumaCpuLayout, Gr
 	}
 
 	WindowsCpuLayout(@NotNull List<ICpuInfo> cpuDetails, SortedSet<Group> groupSet, SortedSet<NumaNode> nodeSet,
-	                 SortedSet<Socket> packageSet, SortedSet<Core> coreSet, SortedSet<Cache> cacheSet) {
+					 SortedSet<Socket> packageSet, SortedSet<Core> coreSet, SortedSet<Cache> cacheSet) {
 
 		super(toVanillaDetails(cpuDetails));
 		cpuDetailsFull = new ArrayList<>(cpuDetails.size());
@@ -66,8 +64,8 @@ public class WindowsCpuLayout extends ApicCpuLayout implements NumaCpuLayout, Gr
 	}
 
 	static List<ICpuInfo> asCpuInfos(WindowsJNAAffinity.SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX[] lpis,
-	                                 SortedSet<Group> groups, SortedSet<NumaNode> nodes,
-	                                 SortedSet<Socket> sockets, SortedSet<Core> cores, SortedSet<Cache> caches) {
+									 SortedSet<Group> groups, SortedSet<NumaNode> nodes,
+									 SortedSet<Socket> sockets, SortedSet<Core> cores, SortedSet<Cache> caches) {
 
 		// gather LayoutEntities and set their group affinity mask
 		for (WindowsJNAAffinity.SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX lpi : lpis) {
@@ -108,7 +106,7 @@ public class WindowsCpuLayout extends ApicCpuLayout implements NumaCpuLayout, Gr
 		for (Group g : groups) {
 			BitSet bs = WindowsJNAAffinity.asBitSet(g.getGroupMask().getMask());
 			int[] positions = bs.stream().toArray();
-			for (int pos : positions) {
+			for (int ignored : positions) {
 				final ICpuInfo cpuInfo = cpuInfos.get(cpuID);
 				if (cpuInfo instanceof IGroupCpuInfo) {
 					IGroupCpuInfo gi = (IGroupCpuInfo) cpuInfo;
@@ -290,115 +288,12 @@ public class WindowsCpuLayout extends ApicCpuLayout implements NumaCpuLayout, Gr
 		return cpuInfo.getMask();
 	}
 
-	Stream<Cache> cachesIntersecting(int cpuId) {
+	public Stream<Cache> cachesIntersecting(int cpuId) {
 		WindowsCpuInfo cpuInfo = lCpu(cpuId);
 		return caches.stream().
 				filter(cache -> cache.intersects(cpuInfo.getGroupId(), cpuInfo.getMask()));
 	}
 
-	/**
-	 * we only want one hit, therefore ignore Instruction Cache
-	 *
-	 * @param cpuId  cpuId
-	 * @param level  cache level
-	 * @param getter getter
-	 * @return usually some sort of size
-	 */
-	private long getCacheInfo(int cpuId, int level, Function<Cache, Long> getter) {
-		long[] retValA = {-1};
-		cachesIntersecting(cpuId)
-				.filter(cache -> cache.getLevel() == level)
-				.filter(cache -> cache.getType() != Cache.CacheType.INSTRUCTION)
-				.findFirst()
-				.ifPresent(cache -> retValA[0] = getter.apply(cache));
-		return retValA[0];
-	}
-
-	private byte getCacheInfoB(int cpuId, int level, Function<Cache, Byte> getter) {
-		byte[] retValA = {-1};
-		cachesIntersecting(cpuId)
-				.filter(cache -> cache.getLevel() == level)
-				.findFirst()
-				.ifPresent(cache -> retValA[0] = getter.apply(cache));
-		return retValA[0];
-	}
-
-	private Cache.CacheType getCacheInfoCT(int cpuId, int level, Function<Cache, Cache.CacheType> getter) {
-		Cache.CacheType[] retValA = new Cache.CacheType[1];
-		cachesIntersecting(cpuId)
-				.filter(cache -> cache.getLevel() == level)
-				.findFirst()
-				.ifPresent(cache -> retValA[0] = getter.apply(cache));
-		return retValA[0];
-	}
-
-	@Override
-	public Cache getCache(int cpuId, int level) {
-		return cachesIntersecting(cpuId)
-				.filter(cache -> cache.getLevel() == level)
-				.findFirst()
-				.orElse(null);
-	}
-
-	@Override
-	public long l1CacheSize(int cpuId) {
-		return getCacheInfo(cpuId, 1, Cache::getSize);
-	}
-
-	@Override
-	public long l2CacheSize(int cpuId) {
-		return getCacheInfo(cpuId, 2, Cache::getSize);
-	}
-
-	@Override
-	public long l3CacheSize(int cpuId) {
-		return getCacheInfo(cpuId, 3, Cache::getSize);
-	}
-
-	@Override
-	public long l1CacheLineSize(int cpuId) {
-		return getCacheInfo(cpuId, 1, Cache::getLineSize);
-	}
-
-	@Override
-	public long l2CacheLineSize(int cpuId) {
-		return getCacheInfo(cpuId, 2, Cache::getLineSize);
-	}
-
-	@Override
-	public long l3CacheLineSize(int cpuId) {
-		return getCacheInfo(cpuId, 3, Cache::getLineSize);
-	}
-
-	@Override
-	public byte l1Associativity(int cpuId) {
-		return getCacheInfoB(cpuId, 1, Cache::getAssociativity);
-	}
-
-	@Override
-	public byte l2Associativity(int cpuId) {
-		return getCacheInfoB(cpuId, 2, Cache::getAssociativity);
-	}
-
-	@Override
-	public byte l3Associativity(int cpuId) {
-		return getCacheInfoB(cpuId, 3, Cache::getAssociativity);
-	}
-
-	@Override
-	public Cache.CacheType l1Type(int cpuId) {
-		return getCacheInfoCT(cpuId, 1, Cache::getType);
-	}
-
-	@Override
-	public Cache.CacheType l2Type(int cpuId) {
-		return getCacheInfoCT(cpuId, 2, Cache::getType);
-	}
-
-	@Override
-	public Cache.CacheType l3Type(int cpuId) {
-		return getCacheInfoCT(cpuId, 3, Cache::getType);
-	}
 
 	public List<Cache> getCaches() {
 		return caches;
@@ -417,11 +312,6 @@ public class WindowsCpuLayout extends ApicCpuLayout implements NumaCpuLayout, Gr
 			}
 		});
 		return result;
-	}
-
-	public List<Cache> getCaches(int cpuId) {
-		Stream<Cache> cacheS = cachesIntersecting(cpuId);
-		return cacheS.collect(Collectors.toList());
 	}
 
 }

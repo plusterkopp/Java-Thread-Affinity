@@ -11,8 +11,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -41,7 +39,7 @@ public class HwLocCpuLayout extends VanillaCpuLayout implements NumaCpuLayout, C
 	}
 
 	HwLocCpuLayout(@NotNull List<ICpuInfo> cpuDetails, List<NumaNode> nodeList,
-	               List<Socket> socketList, List<Core> coreList) {
+				   List<Socket> socketList, List<Core> coreList) {
 
 		super(toVanillaDetails(cpuDetails));
 
@@ -92,113 +90,9 @@ public class HwLocCpuLayout extends VanillaCpuLayout implements NumaCpuLayout, C
 		return nodes;
 	}
 
-	Stream<Cache> cachesIntersecting(int cpuId) {
+	public Stream<Cache> cachesIntersecting(int cpuId) {
 		return caches.stream().
 				filter(cache -> cache.getBitMask().get(cpuId));
-	}
-
-	/**
-	 * we only want one hit, therefore ignore Instruction Cache
-	 *
-	 * @param cpuId  cpuId
-	 * @param level  cache level
-	 * @param getter getter
-	 * @return usually some sort of size
-	 */
-	private long getCacheInfo(int cpuId, int level, Function<Cache, Long> getter) {
-		long[] retValA = {-1};
-		cachesIntersecting(cpuId)
-				.filter(cache -> cache.getLevel() == level)
-				.filter(cache -> cache.getType() != Cache.CacheType.INSTRUCTION)
-				.findFirst()
-				.ifPresent(cache -> retValA[0] = getter.apply(cache));
-		return retValA[0];
-	}
-
-	private byte getCacheInfoB(int cpuId, int level, Function<Cache, Byte> getter) {
-		byte[] retValA = {-1};
-		cachesIntersecting(cpuId)
-				.filter(cache -> cache.getLevel() == level)
-				.findFirst()
-				.ifPresent(cache -> retValA[0] = getter.apply(cache));
-		return retValA[0];
-	}
-
-	private Cache.CacheType getCacheInfoCT(int cpuId, int level, Function<Cache, Cache.CacheType> getter) {
-		Cache.CacheType[] retValA = new Cache.CacheType[1];
-		cachesIntersecting(cpuId)
-				.filter(cache -> cache.getLevel() == level)
-				.findFirst()
-				.ifPresent(cache -> retValA[0] = getter.apply(cache));
-		return retValA[0];
-	}
-
-	@Override
-	public Cache getCache(int cpuId, int level) {
-		return cachesIntersecting(cpuId)
-				.filter(cache -> cache.getLevel() == level)
-				.findFirst()
-				.orElse(null);
-	}
-
-	@Override
-	public long l1CacheSize(int cpuId) {
-		return getCacheInfo(cpuId, 1, Cache::getSize);
-	}
-
-	@Override
-	public long l2CacheSize(int cpuId) {
-		return getCacheInfo(cpuId, 2, Cache::getSize);
-	}
-
-	@Override
-	public long l3CacheSize(int cpuId) {
-		return getCacheInfo(cpuId, 3, Cache::getSize);
-	}
-
-	@Override
-	public long l1CacheLineSize(int cpuId) {
-		return getCacheInfo(cpuId, 1, Cache::getLineSize);
-	}
-
-	@Override
-	public long l2CacheLineSize(int cpuId) {
-		return getCacheInfo(cpuId, 2, Cache::getLineSize);
-	}
-
-	@Override
-	public long l3CacheLineSize(int cpuId) {
-		return getCacheInfo(cpuId, 3, Cache::getLineSize);
-	}
-
-	@Override
-	public byte l1Associativity(int cpuId) {
-		return getCacheInfoB(cpuId, 1, Cache::getAssociativity);
-	}
-
-	@Override
-	public byte l2Associativity(int cpuId) {
-		return getCacheInfoB(cpuId, 2, Cache::getAssociativity);
-	}
-
-	@Override
-	public byte l3Associativity(int cpuId) {
-		return getCacheInfoB(cpuId, 3, Cache::getAssociativity);
-	}
-
-	@Override
-	public Cache.CacheType l1Type(int cpuId) {
-		return getCacheInfoCT(cpuId, 1, Cache::getType);
-	}
-
-	@Override
-	public Cache.CacheType l2Type(int cpuId) {
-		return getCacheInfoCT(cpuId, 2, Cache::getType);
-	}
-
-	@Override
-	public Cache.CacheType l3Type(int cpuId) {
-		return getCacheInfoCT(cpuId, 3, Cache::getType);
 	}
 
 	public List<Cache> getCaches() {
@@ -210,19 +104,14 @@ public class HwLocCpuLayout extends VanillaCpuLayout implements NumaCpuLayout, C
 		List<Cache> result = new ArrayList<>();
 		int coreId = coreId(cpuId);
 		Core core = cores.get(coreId);
-		GroupAffinityMask coreGAM = core.getGroupMask();
+		BitSet coreMask = core.getBitMask();
 		allCaches.forEach(cache -> {
-			GroupAffinityMask cacheGAM = cache.getGroupMask();
-			if (cacheGAM.equals(coreGAM)) {
+			BitSet cacheMask = cache.getBitMask();
+			if (cacheMask.equals(coreMask)) {
 				result.add(cache);
 			}
 		});
 		return result;
-	}
-
-	public List<Cache> getCaches(int cpuId) {
-		Stream<Cache> cacheS = cachesIntersecting(cpuId);
-		return cacheS.collect(Collectors.toList());
 	}
 
 	public String toString() {

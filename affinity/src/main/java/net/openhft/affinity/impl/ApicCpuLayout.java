@@ -36,6 +36,40 @@ import static java.lang.Integer.parseInt;
  */
 public class ApicCpuLayout extends VanillaCpuLayout {
 
+	public static ApicCpuLayout fromCpuInfo(InputStream is) throws IOException {
+		BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+		String line;
+		List<ICpuInfo> cpuDetails = new ArrayList<>();
+		ApicCpuInfo details = new ApicCpuInfo();
+		Map<String, Integer> threadCount = new LinkedHashMap<String, Integer>();
+
+		while ((line = br.readLine()) != null) {
+			if (line.trim().isEmpty()) {
+				String key = details.getSocketId() + "," + details.getCoreId();
+				Integer count = threadCount.get(key);
+				if (count == null) {
+					threadCount.put(key, count = 1);
+				} else {
+					threadCount.put(key, count += 1);
+				}
+				details.setThreadId(count - 1);
+				cpuDetails.add(details);
+				details = new ApicCpuInfo();
+				details.setCoreId(cpuDetails.size());
+				continue;
+			}
+			String[] words = line.split("\\s*:\\s*", 2);
+			if (words[0].equals("physical id")) {
+				details.setSocketId(parseInt(words[1]));
+			} else if (words[0].equals("core id")) {
+				details.setCoreId(parseInt(words[1]));
+			} else if (words[0].equals("apicid")) {
+				details.setApicId(parseInt(words[1]));
+			}
+		}
+		return new ApicCpuLayout(cpuDetails);
+	}
+
 	ApicCpuLayout(@NotNull List<ICpuInfo> cpuDetails) {
 		super(cpuDetails);
 	}
@@ -77,38 +111,6 @@ public class ApicCpuLayout extends VanillaCpuLayout {
 
 	public ICpuInfo getCPUInfo(int index) {
 		return cpuDetails.get(index);
-	}
-
-	public static ApicCpuLayout fromCpuInfo(InputStream is) throws IOException {
-		BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"));
-		String line;
-		List<ICpuInfo> cpuDetails = new ArrayList<>();
-		ApicCpuInfo details = new ApicCpuInfo();
-		Map<String, Integer> threadCount = new LinkedHashMap<String, Integer>();
-
-		while ((line = br.readLine()) != null) {
-			if (line.trim().isEmpty()) {
-				String key = details.getSocketId() + "," + details.getCoreId();
-				Integer count = threadCount.get(key);
-				if (count == null)
-					threadCount.put(key, count = 1);
-				else
-					threadCount.put(key, count += 1);
-				details.setThreadId(count - 1);
-				cpuDetails.add(details);
-				details = new ApicCpuInfo();
-				details.setCoreId(cpuDetails.size());
-				continue;
-			}
-			String[] words = line.split("\\s*:\\s*", 2);
-			if (words[0].equals("physical id"))
-				details.setSocketId(parseInt(words[1]));
-			else if (words[0].equals("core id"))
-				details.setCoreId(parseInt(words[1]));
-			else if (words[0].equals("apicid"))
-				details.setApicId(parseInt(words[1]));
-		}
-		return new ApicCpuLayout(cpuDetails);
 	}
 
 }

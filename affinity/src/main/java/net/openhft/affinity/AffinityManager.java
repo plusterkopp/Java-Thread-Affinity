@@ -34,6 +34,21 @@ public class AffinityManager {
 
 	private AffinityManager() {
 		cpuLayout = initLayout();
+		countEntities();
+	}
+
+	private void countEntities() {
+		Map<String, Integer> typeToCount = new HashMap<>();
+		visitEntities(e -> {
+			String typeName = e.getTypeName();
+			typeToCount.compute(typeName, (name, count) -> count == null ? 1 : count + 1);
+		});
+		visitEntities(e -> {
+			String typeName = e.getTypeName();
+			int count = typeToCount.get(typeName);
+			e.setCountInLayout(count);
+		});
+
 	}
 
 	// initializing the layout may occasionally throw spurious errors, very hard to reproduce
@@ -331,12 +346,12 @@ public class AffinityManager {
 			return result;
 		}
 		return Collections.emptyList();
-
 	}
 
 
 	public void dumpLayout() {
 		StringBuilder sb = new StringBuilder();
+		dumpLayout(sb);
 		System.out.print(sb);
 	}
 
@@ -380,6 +395,50 @@ public class AffinityManager {
 			return Integer.compare(Objects.hashCode(a), Objects.hashCode(b));
 		});
 		visitEntities(e -> sortedEntities.add(e));
-		sortedEntities.forEach(e -> sb.append(e.getClass().getSimpleName() + ": " + e + "\n"));
+		sortedEntities.forEach(e -> {
+			sb.append(getLocation(e))
+				.append(" ")
+				.append(e.getClass().getSimpleName() + ": " + e + "\n");
+		});
 	}
+
+	public String getLocation(LayoutEntity le) {
+		List<LayoutEntity> inEntities = new ArrayList<>(10);
+		visitEntities(entity -> {
+			if (entity == le || entity.getCountInLayout() < 2) {
+				return;
+			}
+			if (entity.fullyContains(le)) {
+				inEntities.add(entity);
+			}
+		});
+		Collections.sort(inEntities, (a, b) -> {
+			GroupAffinityMask gamA = a.getGroupMask();
+			GroupAffinityMask gamB = b.getGroupMask();
+			if (gamA != null && gamB != null) {
+				long gamAMask = gamA.getMask();
+				long gamBMask = gamB.getMask();
+				return Long.compare(Long.bitCount(gamAMask), Long.bitCount(gamBMask));
+			}
+			// or BitSets
+			BitSet bsA = a.getBitMask();
+			BitSet bsB = b.getBitMask();
+			return Long.compare(bsA.cardinality(), bsB.cardinality());
+		});
+		StringBuilder sb = new StringBuilder(100);
+		sb.append(le.getTypeName())
+			.append("#")
+			.append(le.getId())
+		;
+		inEntities.forEach(e -> {
+			sb
+				.append("/")
+				.append(e.getTypeName())
+				.append("#")
+				.append(e.getId());
+		});
+
+		return sb.toString();
+	}
+
 }

@@ -73,5 +73,9 @@ public class Core extends LayoutEntity {
 
 	}
 
+	@Override
+	public String getTypeName() {
+		return "C";
+	}
 
 }

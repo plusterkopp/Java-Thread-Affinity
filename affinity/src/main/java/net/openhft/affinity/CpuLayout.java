@@ -57,5 +57,6 @@ public interface CpuLayout {
 	 */
 	int threadsPerCore(int physicalCore);
 
+
 //    ICpuInfo getCPUInfo( int cpuId);
 }
