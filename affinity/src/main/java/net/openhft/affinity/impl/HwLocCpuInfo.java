@@ -32,7 +32,7 @@ public class HwLocCpuInfo extends ApicCpuInfo implements INumaCpuInfo {
 			if (entity == null) {
 				continue;
 			}
-			BitSet bitMask = entity.getBitMask();
+			BitSet bitMask = entity.getBitSetMask();
 			bitMask.set(apicID);
 		}
 	}

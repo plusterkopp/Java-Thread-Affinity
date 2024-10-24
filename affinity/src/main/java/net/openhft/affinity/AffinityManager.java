@@ -155,12 +155,12 @@ public class AffinityManager {
 				return true;
 			}
 			ICpuInfo current = w.getCPUInfo(cpuId);
-			BitSet desired = (BitSet) socket.getBitMask().clone();
+			BitSet desired = (BitSet) socket.getBitSetMask().clone();
 			Socket currentSocket = w.packages.stream()
 					.filter(s -> s.getId() == currentSocketId)
 					.findFirst()
 					.get();
-			BitSet ofCurrentSocket = (BitSet) currentSocket.getBitMask().clone();
+			BitSet ofCurrentSocket = (BitSet) currentSocket.getBitSetMask().clone();
 			ofCurrentSocket.and(desired);
 			System.err.print("can not bind: " + socket + ", bound to " + currentSocket + " masks intersect at " + ofCurrentSocket);
 		}
@@ -378,9 +378,9 @@ public class AffinityManager {
 					return 1;
 				}
 			} else {    // should be hierarchical. Linux doesn't assign SMT bits next to each other.
-				BitSet bsA = a.getBitMask();
+				BitSet bsA = a.getBitSetMask();
 				long[] longBitsA = bsA.toLongArray();
-				BitSet bsB = b.getBitMask();
+				BitSet bsB = b.getBitSetMask();
 				long[] longBitsB = bsB.toLongArray();
 				for (int i = longBitsA.length - 1; i >= 0; i--) {
 					long maskA = longBitsA[i];
@@ -403,10 +403,22 @@ public class AffinityManager {
 	}
 
 	public String getLocation(LayoutEntity le) {
+		String locationInfo = le.getLocationInfo();
+		if ( locationInfo != null) {
+			return locationInfo;
+		}
 		List<LayoutEntity> inEntities = new ArrayList<>(10);
 		visitEntities(entity -> {
+			// exclude the entity itself and any entity that has only one instance (which then fullyContains everything else anyway and doesn't add information)
 			if (entity == le || entity.getCountInLayout() < 2) {
 				return;
+			}
+			// omit L1 caches
+			if (entity instanceof Cache) {
+				Cache cache = (Cache) entity;
+				if (cache.getLevel() == 1) {
+					return;
+				}
 			}
 			if (entity.fullyContains(le)) {
 				inEntities.add(entity);
@@ -421,8 +433,8 @@ public class AffinityManager {
 				return Long.compare(Long.bitCount(gamAMask), Long.bitCount(gamBMask));
 			}
 			// or BitSets
-			BitSet bsA = a.getBitMask();
-			BitSet bsB = b.getBitMask();
+			BitSet bsA = a.getBitSetMask();
+			BitSet bsB = b.getBitSetMask();
 			return Long.compare(bsA.cardinality(), bsB.cardinality());
 		});
 		StringBuilder sb = new StringBuilder(100);
@@ -438,7 +450,9 @@ public class AffinityManager {
 				.append(e.getId());
 		});
 
-		return sb.toString();
+		locationInfo = sb.toString();
+		le.setLocationInfo( locationInfo);
+		return locationInfo;
 	}
 
 }

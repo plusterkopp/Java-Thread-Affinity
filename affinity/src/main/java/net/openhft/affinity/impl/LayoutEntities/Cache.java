@@ -190,8 +190,8 @@ public class Cache extends LayoutEntity {
 	 * @param sb
 	 */
 	public static void printSizeToSB(long size, StringBuilder sb) {
-		long sizesA[] = {1L << 40, 1L << 30, 1L << 20, 1L << 10};
-		char suffixesA[] = {'T', 'G', 'M', 'K'};
+		long[] sizesA = {1L << 40, 1L << 30, 1L << 20, 1L << 10};
+		char[] suffixesA = {'T', 'G', 'M', 'K'};
 
 		for (int i = 0; i < sizesA.length; i++) {
 			long limit = sizesA[i];
@@ -206,11 +206,20 @@ public class Cache extends LayoutEntity {
 
 	public String toString() {
 		StringBuilder sb = new StringBuilder(100);
-		sb.append("L").append(level).append(getType().shortName()).append(" (");
+		sb
+			.append(getTypeName())
+			.append(" ID: ")
+			.append(getId())
+			.append(" (");
 		printSizeToSB(size, sb);
-		sb.append(") ").append(super.toString());
+		sb.append(") ");
+		appendMaskInfo(sb);
 		return sb.toString();
-		// return "" + level + " " + super.toString(); //  + " L" + level + " " + type.shortName();
+	}
+
+	@Override
+	public ELayoutEntityType getEntityType() {
+		return ELayoutEntityType.Cache;
 	}
 
 }

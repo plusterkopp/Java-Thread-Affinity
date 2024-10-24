@@ -22,7 +22,7 @@ public class Group extends LayoutEntity {
 	}
 
 	public int getMSB() {
-		BitSet bitSet = getBitMask();
+		BitSet bitSet = getBitSetMask();
 		if (bitSet != null) {
 			return bitSet.length();
 		}
@@ -36,6 +36,11 @@ public class Group extends LayoutEntity {
 
 	public String getTypeName() {
 		return "G";
+	}
+
+	@Override
+	public ELayoutEntityType getEntityType() {
+		return ELayoutEntityType.Group;
 	}
 
 }

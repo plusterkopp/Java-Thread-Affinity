@@ -38,7 +38,7 @@ public class AffinityManagerTest {
 				boolean success = AffinityManager.getInstance().bindToNode(node);
 				if (!success) {
 					int currentCpuId = Affinity.getCpu();
-					System.err.println("cpu=" + currentCpuId + " after mask " + node.getBitMask() + " actual: " + Affinity.getAffinity());
+					System.err.println("cpu=" + currentCpuId + " after mask " + node.getBitSetMask() + " actual: " + Affinity.getAffinity());
 				}
 				Assert.assertTrue("did not bind node " + node, success);
 			}

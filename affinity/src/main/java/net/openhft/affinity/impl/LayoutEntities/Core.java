@@ -37,7 +37,7 @@ public class Core extends LayoutEntity {
 	}
 
 	public String toString() {
-		return "C " + super.toString() + " on " + getSocket();
+		return "C " + super.toString(); // + " on " + getSocket();
 	}
 
 	public String getLocation() {
@@ -76,6 +76,11 @@ public class Core extends LayoutEntity {
 	@Override
 	public String getTypeName() {
 		return "C";
+	}
+
+	@Override
+	public ELayoutEntityType getEntityType() {
+		return ELayoutEntityType.Core;
 	}
 
 }

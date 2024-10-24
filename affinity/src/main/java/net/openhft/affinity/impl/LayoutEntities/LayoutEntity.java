@@ -17,6 +17,8 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
 	private int id;
 	private int countInLayout;
 
+	private String locationInfo = null;
+
 	protected LayoutEntity(int groupID, long mask) {
 		this(new GroupAffinityMask(groupID, mask));
 	}
@@ -64,14 +66,21 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
 
 	@Override
 	public int compareTo(LayoutEntity o) {
+		final int comparedByMask;
 		// hope this doesn't get called too often
 		if (bitsetMask != null && o.bitsetMask != null) {
 			String s1 = bitsetMask.toString();
 			String s2 = o.bitsetMask.toString();
-			return s1.compareTo(s2);
+			comparedByMask = s1.compareTo(s2);
+		} else {
+			// I don't expect to compare two Entities with different mask modes
+			comparedByMask = groupAffinityMask.compareTo(o.groupAffinityMask);
 		}
-		// I don't expect to compare two Entities with different mask modes
-		return groupAffinityMask.compareTo(o.groupAffinityMask);
+		if (0 != comparedByMask) {
+			return comparedByMask;
+		}
+		int comparedbyType = getEntityType().compareTo(o.getEntityType());
+		return comparedbyType;
 	}
 
 	public void setId(int id) {
@@ -82,7 +91,7 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
 		return groupAffinityMask;
 	}
 
-	public BitSet getBitMask() {
+	public BitSet getBitSetMask() {
 		return bitsetMask;
 	}
 
@@ -134,23 +143,43 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
 	 */
 	@Override
 	public String toString() {
+		StringBuilder sb = new StringBuilder(300);
+		sb
+			.append(getTypeName())
+			.append(" ID: ")
+			.append(getId());
+		appendMaskInfo(sb);
+		return sb.toString();
+	}
+
+	void appendMaskInfo(StringBuilder sb) {
 		if (bitsetMask != null) {
-			StringBuilder sb = new StringBuilder(300);
-			sb.append("ID: ")
-					.append(getId())
-					.append(" M: ");
+			sb.append(" M: ");
 			StringBuilder bitSB = new StringBuilder(200);
 			long bits[] = bitsetMask.toLongArray();
 			for (int i = bits.length - 1; i >= 0; i--) {
 				bitSB.append(longMaskToString(bits[i]))
-						.append(" ");
+					.append(" ");
 			}
 			bitSB.setLength(bitSB.length() - 1);
 			sb.append(bitSB);
-			return sb.toString();
+		} else { // Windows: using GroupMask instead of BitSet
+			sb
+				.append(" GM: ")
+				.append(groupAffinityMask.getGroupId())
+				.append("/")
+				.append(longMaskToString(groupAffinityMask.getMask()));
+
+			sb.append( " (");
+			BitSet bs = getBitMask();
+			long bits[] = bs.toLongArray();
+			for (int i = bits.length - 1; i >= 0; i--) {
+				sb.append(longMaskToString(bits[i]))
+					.append(" ");
+			}
+			sb.setLength(sb.length() - 1);
+			sb.append( ")");
 		}
-		// Windows: using GroupMask instead of BitSet
-		return "ID: " + getId() + " GM: " + groupAffinityMask.getGroupId() + "/" + longMaskToString(groupAffinityMask.getMask());
 	}
 
 	String longMaskToString(long l) {
@@ -216,8 +245,8 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
 			long ifOtherThenThisFlipped = ~ifOtherThenThis;
 			return ifOtherThenThisFlipped == 0;
 		}
-		BitSet thisBS = getBitMask();
-		BitSet otherBS = le.getBitMask();
+		BitSet thisBS = getBitSetMask();
+		BitSet otherBS = le.getBitSetMask();
 		if (thisBS.equals(otherBS)) {
 			return true;
 		}
@@ -240,6 +269,8 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
 
 	public abstract String getTypeName();
 
+	public abstract ELayoutEntityType getEntityType();
+
 	public void setCountInLayout(int count) {
 		countInLayout = count;
 	}
@@ -247,4 +278,23 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
 	public int getCountInLayout() {
 		return countInLayout;
 	}
+
+	public String getLocationInfo() {
+		return locationInfo;
+	}
+	public void setLocationInfo(String info) {
+		locationInfo = info;
+	}
+
+	public BitSet getBitMask() {
+		if (bitsetMask != null) {
+			return bitsetMask;
+		}
+		int groupId = groupAffinityMask.getGroupId();
+		long[] longMask = new long[ groupId + 1];
+		Arrays.fill( longMask, 0L);
+		longMask[ groupId] = groupAffinityMask.getMask();
+		return BitSet.valueOf( longMask);
+	}
+
 }

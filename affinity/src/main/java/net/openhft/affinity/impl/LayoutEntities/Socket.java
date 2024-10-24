@@ -50,4 +50,9 @@ public class Socket extends LayoutEntity {
 		return "S";
 	}
 
+	@Override
+	public ELayoutEntityType getEntityType() {
+		return ELayoutEntityType.Socket;
+	}
+
 }
