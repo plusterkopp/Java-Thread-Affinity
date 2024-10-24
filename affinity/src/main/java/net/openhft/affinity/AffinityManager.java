@@ -384,7 +384,7 @@ public class AffinityManager {
 				long[] longBitsB = bsB.toLongArray();
 				for (int i = longBitsA.length - 1; i >= 0; i--) {
 					long maskA = longBitsA[i];
-					long maskB = longBitsB[i];
+					long maskB = longBitsB.length > i ? longBitsB[i] : 0L;
 					if (maskA != maskB) {
 						return -Long.compareUnsigned(maskA, maskB);
 					}
