@@ -170,15 +170,15 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
 				.append("/")
 				.append(longMaskToString(groupAffinityMask.getMask()));
 
-			sb.append( " (");
-			BitSet bs = getBitMask();
-			long bits[] = bs.toLongArray();
-			for (int i = bits.length - 1; i >= 0; i--) {
-				sb.append(longMaskToString(bits[i]))
-					.append(" ");
-			}
-			sb.setLength(sb.length() - 1);
-			sb.append( ")");
+//			sb.append( " (");
+//			BitSet bs = getBitMask();
+//			long bits[] = bs.toLongArray();
+//			for (int i = bits.length - 1; i >= 0; i--) {
+//				sb.append(longMaskToString(bits[i]))
+//					.append(" ");
+//			}
+//			sb.setLength(sb.length() - 1);
+//			sb.append( ")");
 		}
 	}
 
