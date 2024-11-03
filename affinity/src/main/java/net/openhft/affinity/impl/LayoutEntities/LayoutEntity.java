@@ -147,7 +147,7 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
 		sb
 			.append(getTypeName())
 			.append(" ID: ")
-			.append(getId());
+			.append( paddedID());
 		appendMaskInfo(sb);
 		return sb.toString();
 	}
@@ -295,6 +295,17 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
 		Arrays.fill( longMask, 0L);
 		longMask[ groupId] = groupAffinityMask.getMask();
 		return BitSet.valueOf( longMask);
+	}
+
+	public String paddedID() {
+		int exp = 1;
+		int power = 10;
+		while ( getCountInLayout() >= power) {
+			exp++;
+			power *= 10;
+		}
+		String format = "%0" + exp + "d";
+		return String.format( format, Integer.valueOf( id));
 	}
 
 }

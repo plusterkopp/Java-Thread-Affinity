@@ -115,5 +115,19 @@ public class VanillaCpuLayoutTest {
 		}
 	}
 
+	@Test
+	public void testCPUIDs() {
+		IAffinity aff = Affinity.getAffinityImpl();
+		Assume.assumeTrue("not running for " + aff.getClass(), aff instanceof IDefaultLayoutAffinity);
+		IDefaultLayoutAffinity idl = (IDefaultLayoutAffinity) aff;
+		CpuLayout cpuLayout = idl.getDefaultLayout();
+		Assume.assumeTrue("not running if no default layout ", cpuLayout != null);
+		Assume.assumeTrue("not VanillaCpuLayout for " + cpuLayout, cpuLayout instanceof VanillaCpuLayout);
+		VanillaCpuLayout vanilla = (VanillaCpuLayout) cpuLayout;
+		for ( int i = 0;  i < vanilla.cores.size();  i++) {
+			Core core = vanilla.cores.get( i);
+			assertEquals("index mismatch at #" + i + ": coreId=" + core.getId(), i, core.getId());
+		}
+	}
 
 }

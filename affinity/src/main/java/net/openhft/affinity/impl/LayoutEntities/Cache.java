@@ -209,7 +209,7 @@ public class Cache extends LayoutEntity {
 		sb
 			.append(getTypeName())
 			.append(" ID: ")
-			.append(getId())
+			.append( paddedID())
 			.append(" (");
 		printSizeToSB(size, sb);
 		sb.append(") ");

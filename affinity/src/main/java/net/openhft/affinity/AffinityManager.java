@@ -41,7 +41,7 @@ public class AffinityManager {
 		Map<String, Integer> typeToCount = new HashMap<>();
 		visitEntities(e -> {
 			String typeName = e.getTypeName();
-			typeToCount.compute(typeName, (name, count) -> count == null ? 1 : count + 1);
+			typeToCount.compute(typeName, (name, count) -> Integer.valueOf(count == null ? 1 : count + 1));
 		});
 		visitEntities(e -> {
 			String typeName = e.getTypeName();
@@ -407,6 +407,19 @@ public class AffinityManager {
 		if ( locationInfo != null) {
 			return locationInfo;
 		}
+		int nCoresA[] = { 0};
+		int nL2A[] = { 0};
+		visitEntities(entity -> {
+			if ( entity instanceof  Core) {
+				nCoresA[ 0]++;
+			}
+			if ( entity instanceof Cache) {
+				Cache c = (Cache) entity;
+				if ( c.getLevel() == 2) {
+					nL2A[ 0]++;
+				}
+			}
+		});
 		List<LayoutEntity> inEntities = new ArrayList<>(10);
 		visitEntities(entity -> {
 			// exclude the entity itself and any entity that has only one instance (which then fullyContains everything else anyway and doesn't add information)
@@ -416,7 +429,11 @@ public class AffinityManager {
 			// omit L1 caches
 			if (entity instanceof Cache) {
 				Cache cache = (Cache) entity;
-				if (cache.getLevel() == 1) {
+				if ( 1 == cache.getLevel()) {
+					return;
+				}
+				// skip L2 info if number of cores equals number of L2
+				if ( 2 == cache.getLevel() && nCoresA[ 0] == nL2A[ 0]) {
 					return;
 				}
 			}
@@ -425,6 +442,11 @@ public class AffinityManager {
 			}
 		});
 		Collections.sort(inEntities, (a, b) -> {
+			ELayoutEntityType typeA = a.getEntityType();
+			ELayoutEntityType typeB = b.getEntityType();
+			if ( typeA != typeB) {
+				return typeA.compareTo( typeB);
+			}
 			GroupAffinityMask gamA = a.getGroupMask();
 			GroupAffinityMask gamB = b.getGroupMask();
 			if (gamA != null && gamB != null) {
@@ -440,14 +462,14 @@ public class AffinityManager {
 		StringBuilder sb = new StringBuilder(100);
 		sb.append(le.getTypeName())
 			.append("#")
-			.append(le.getId())
+			.append(le.paddedID())
 		;
 		inEntities.forEach(e -> {
 			sb
 				.append("/")
 				.append(e.getTypeName())
 				.append("#")
-				.append(e.getId());
+				.append( e.paddedID());
 		});
 
 		locationInfo = sb.toString();
