@@ -18,6 +18,7 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
 	private int countInLayout;
 
 	private String locationInfo = null;
+	private int maxIdInLayout;
 
 	protected LayoutEntity(int groupID, long mask) {
 		this(new GroupAffinityMask(groupID, mask));
@@ -300,7 +301,7 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
 	public String paddedID() {
 		int exp = 1;
 		int power = 10;
-		while ( getCountInLayout() >= power) {
+		while ( maxIdInLayout >= power) {
 			exp++;
 			power *= 10;
 		}
@@ -308,4 +309,11 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
 		return String.format( format, Integer.valueOf( id));
 	}
 
+	public void setMaxIdInLayout(int max) {
+		maxIdInLayout = max;
+	}
+
+	int getMaxIdInLayout() {
+		return maxIdInLayout;
+	}
 }

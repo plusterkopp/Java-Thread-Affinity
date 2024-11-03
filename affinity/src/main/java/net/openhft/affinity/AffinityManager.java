@@ -39,14 +39,18 @@ public class AffinityManager {
 
 	private void countEntities() {
 		Map<String, Integer> typeToCount = new HashMap<>();
+		Map<String, Integer> typeToMax = new HashMap<>();
 		visitEntities(e -> {
 			String typeName = e.getTypeName();
 			typeToCount.compute(typeName, (name, count) -> Integer.valueOf(count == null ? 1 : count + 1));
+			typeToMax.compute(typeName, (name, max) -> Integer.valueOf( max == null ? e.getId() : Math.max( max, e.getId())));
 		});
 		visitEntities(e -> {
 			String typeName = e.getTypeName();
 			int count = typeToCount.get(typeName);
 			e.setCountInLayout(count);
+			int max = typeToMax.get(typeName);
+			e.setMaxIdInLayout( max);
 		});
 
 	}
