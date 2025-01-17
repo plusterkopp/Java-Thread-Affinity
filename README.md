@@ -46,6 +46,7 @@ To use these threads, `ThreadPool`s need a custom `ThreadFactory` that creates `
 Usually, I do not unbind or rebind threads after they have been initially bound. However, this is possible and covered in unit tests.
 
 I would like to see this fork somehow remerged back into the original package if my use case becomes more relevant to the people maintaining it. If I need to add more comments to my already totally self-explanatory code to help this effort, please contact me.
+
 ---
 Overdue update Oct 2023
 
