@@ -112,16 +112,23 @@ public class AffinityLock implements Closeable {
 
 	private static BitSet getReservedAffinity0() {
 		String reservedAffinity = System.getProperty(AFFINITY_RESERVED);
+//		System.out.println( "getReservedAffinity0 prop: " + reservedAffinity);
 		if (reservedAffinity == null || reservedAffinity.trim().isEmpty()) {
-			BitSet reserverable = new BitSet(PROCESSORS);
-			reserverable.set(0, PROCESSORS - 1, true);
+			// during tests, it happens that this reports as little as two processors where there should be 16. Occurs in commandline maven and IDEA.
+			int processors = Runtime.getRuntime().availableProcessors();
+			BitSet reserverable = new BitSet(processors);
+			reserverable.set(0, processors - 1, true);
+//			System.out.println( "getReservedAffinity0 init with " + processors + " cpus, reserved: " + reserverable);
 			reserverable.and(BASE_AFFINITY);
-			if (reserverable.isEmpty() && PROCESSORS > 1) {
-				LoggerFactory.getLogger(AffinityLock.class).info("No isolated CPUs found, so assuming CPUs 1 to {} available.", (PROCESSORS - 1));
-				reserverable = new BitSet(PROCESSORS);
+//			System.out.println( "getReservedAffinity0 subtract base " + BASE_AFFINITY + " remaining: " + reserverable);
+			if (reserverable.isEmpty() && processors > 1) {
+//				System.out.println( "getReservedAffinity0 empty, rebuilding ");
+				LoggerFactory.getLogger(AffinityLock.class).info("No isolated CPUs found, so assuming CPUs 1 to {} available.", (processors - 1));
+				reserverable = new BitSet(processors);
 				// make the first CPU unavailable
-				reserverable.set(1, PROCESSORS - 1, true);
+				reserverable.set(1, processors - 1, true);
 				reserverable.set(0, false);
+//				System.out.println( "getReservedAffinity0 reinit with " + processors + " cpus, reserved: " + reserverable);
 				return reserverable;
 			}
 			return reserverable;

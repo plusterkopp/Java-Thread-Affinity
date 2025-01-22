@@ -39,6 +39,7 @@ public class AffinityLockTest {
 
 	@Test
 	public void dumpLocksI7() throws IOException {
+//		System.out.println("Locks at dumpLocksI3 entry: " + AffinityLock.dumpLocks());
 		LockInventory lockInventory = new LockInventory(VanillaCpuLayout.fromCpuInfo("i7.cpuinfo"));
 		AffinityLock[] locks = {
 				new AffinityLock(0, true, false, lockInventory),
@@ -66,7 +67,7 @@ public class AffinityLockTest {
 				"5: CPU not available\n" +
 				"6: Thread[main,5,main] alive=false\n" +
 				"7: Thread[tcp,5,main] alive=true\n", actual);
-		System.out.println(actual);
+//		System.out.println(actual);
 
 		locks[2].assignedThread.interrupt();
 		locks[3].assignedThread.interrupt();
@@ -76,6 +77,7 @@ public class AffinityLockTest {
 
 	@Test
 	public void dumpLocksI3() throws IOException {
+//		System.out.println("Locks at dumpLocksI3 entry: " + AffinityLock.dumpLocks());
 		LockInventory lockInventory = new LockInventory(VanillaCpuLayout.fromCpuInfo("i3.cpuinfo"));
 		AffinityLock[] locks = {
 				new AffinityLock(0, true, false, lockInventory),
@@ -92,13 +94,14 @@ public class AffinityLockTest {
 				"1: Thread[engine,5,main] alive=true\n" +
 				"2: General use CPU\n" +
 				"3: Thread[main,5,main] alive=false\n", actual);
-		System.out.println(actual);
+//		System.out.println(actual);
 
 		locks[1].assignedThread.interrupt();
 	}
 
 	@Test
 	public void dumpLocksCoreDuo() throws IOException {
+//		System.out.println("Locks at dumpLocksCoreDuo entry: " + AffinityLock.dumpLocks());
 		LockInventory lockInventory = new LockInventory(VanillaCpuLayout.fromCpuInfo("core.duo.cpuinfo"));
 		AffinityLock[] locks = {
 				new AffinityLock(0, true, false, lockInventory),
@@ -110,14 +113,14 @@ public class AffinityLockTest {
 		final String actual = LockInventory.dumpLocks(locks);
 		assertEquals("0: General use CPU\n" +
 				"1: Thread[engine,5,main] alive=true\n", actual);
-		System.out.println(actual);
 
 		locks[1].assignedThread.interrupt();
+//		System.out.println("Locks at dumpLocksCoreDuo exit: " + AffinityLock.dumpLocks());
 	}
 
 	@Test
 	public void assignReleaseThread() throws IOException {
-		System.out.println("Locks at assignReleaseThread entry: " + AffinityLock.dumpLocks());
+//		System.out.println("Locks at assignReleaseThread entry: " + AffinityLock.dumpLocks());
 		final CpuLayout defaultLayout = AffinityLock.cpuLayout();
 		// continue
 		if (AffinityLock.RESERVED_AFFINITY.isEmpty()) {
@@ -134,28 +137,28 @@ public class AffinityLockTest {
 
 		// force reset
 		AffinityLock.cpuLayout(new NoCpuLayout(1));
-		System.out.println("Locks during reset: " + AffinityLock.dumpLocks());
+//		System.out.println("Locks during reset: " + AffinityLock.dumpLocks());
 		AffinityLock.cpuLayout(defaultLayout);
 
-		System.out.println("Locks after reset: " + AffinityLock.dumpLocks());
-		System.out.println("Layout: " + defaultLayout);
-		System.out.println("Reserved: " + AffinityLock.RESERVED_AFFINITY);
-		System.out.println("Affinity before acquirelock: " + Affinity.getAffinity());
+//		System.out.println("Locks after reset: " + AffinityLock.dumpLocks());
+//		System.out.println("Layout: " + defaultLayout);
+//		System.out.println("Reserved: " + AffinityLock.RESERVED_AFFINITY);
+//		System.out.println("Affinity before acquirelock: " + Affinity.getAffinity());
 		assertEquals(AffinityLock.BASE_AFFINITY, Affinity.getAffinity());
 		AffinityLock al = AffinityLock.acquireLock();
-		System.out.println("Affinity after acquirelock: " + Affinity.getAffinity() + " lock: " + al);
+//		System.out.println("Affinity after acquirelock: " + Affinity.getAffinity() + " lock: " + al);
 		assertEquals(1, Affinity.getAffinity().cardinality());
 		al.release();
 		assertEquals(AffinityLock.BASE_AFFINITY, Affinity.getAffinity());
 
 		assertEquals(AffinityLock.BASE_AFFINITY, Affinity.getAffinity());
-		System.out.println("Affinity before acquirecore: " + Affinity.getAffinity());
+//		System.out.println("Affinity before acquirecore: " + Affinity.getAffinity());
 		AffinityLock al2 = AffinityLock.acquireCore();
-		System.out.println("Affinity after acquirecore: " + Affinity.getAffinity() + " lock: " + al2);
+//		System.out.println("Affinity after acquirecore: " + Affinity.getAffinity() + " lock: " + al2);
 		assertEquals(1, Affinity.getAffinity().cardinality());
 		al2.release();
 		assertEquals(AffinityLock.BASE_AFFINITY, Affinity.getAffinity());
-		System.out.println("Affinity after release: " + Affinity.getAffinity());
+//		System.out.println("Affinity after release: " + Affinity.getAffinity());
 	}
 
 	@Test
@@ -164,12 +167,18 @@ public class AffinityLockTest {
 			System.out.println("Cannot run affinity test as this system doesn't have a /proc/cpuinfo file");
 			return;
 		}
+		int availableProcessors = Runtime.getRuntime().availableProcessors();
+//		System.out.println("Locks at testIssue21 entry: " + AffinityLock.dumpLocks());
 		VanillaCpuLayout layout = VanillaCpuLayout.fromCpuInfo();
 		AffinityLock.cpuLayout(layout);
 		AffinityLock al = AffinityLock.acquireLock();
+		if ( al.cpuId() < 0) {
+			System.out.println("no reservable cpu in layout: " + layout + "\n" + layout.cpus() + " cpus, " + availableProcessors + " availableProcessors, aborting test");
+			al.release();
+			return;
+		}
 		AffinityLock alForAnotherThread = al.acquireLock(AffinityStrategies.ANY);
-		int availableProcessors = Runtime.getRuntime().availableProcessors();
-		System.out.println("layout: " + layout + "\n" + layout.cpus() + " cpus");
+//		System.out.println("layout: " + layout + "\n" + layout.cpus() + " cpus, " + availableProcessors + " availableProcessors");
 		if (layout.cpus() > 2) {
 			AffinityLock alForAnotherThread2 = al.acquireLock(AffinityStrategies.ANY);
 			assertNotSame(alForAnotherThread, alForAnotherThread2);
@@ -178,7 +187,6 @@ public class AffinityLockTest {
 					alForAnotherThread.cpuId(), alForAnotherThread2.cpuId());
 
 			alForAnotherThread2.release();
-
 		} else {
 			assertNotSame(alForAnotherThread, al);
 			int anotherCPUid = alForAnotherThread.cpuId();
@@ -209,7 +217,7 @@ public class AffinityLockTest {
 
 	@Test
 	public void testGettid() {
-		System.out.println("cpu= " + Affinity.getCpu());
+		System.out.println("testGettid cpu= " + Affinity.getCpu() + "\n");
 	}
 
 	@Test

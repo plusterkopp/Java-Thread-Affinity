@@ -32,7 +32,7 @@
 	<packaging>bundle</packaging>
 
 	<name>Java-Thread-Affinity/affinity</name>
-	<description>Java Thread Affinity library with Windows support</description>
+	<description>Java Thread Affinity library with automatic layout detection</description>
 
 	<properties>
 		<native.source.dir>src/main/c</native.source.dir>
