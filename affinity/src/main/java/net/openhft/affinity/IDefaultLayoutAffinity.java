@@ -34,4 +34,6 @@ public interface IDefaultLayoutAffinity {
 	 * @return determine and return system CPU layout or null, if no layout can be determined
 	 */
 	CpuLayout getDefaultLayout();
+
+	public String getRawData();
 }

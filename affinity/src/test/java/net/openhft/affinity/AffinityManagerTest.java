@@ -142,4 +142,10 @@ public class AffinityManagerTest {
 		}
 	}
 
+	@Test
+	public void testDumpRaw() {
+		final AffinityManager am = AffinityManager.getInstance();
+		am.dumpRawLayout();
+	}
+
 }

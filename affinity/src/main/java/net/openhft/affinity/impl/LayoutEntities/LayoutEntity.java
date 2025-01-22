@@ -49,7 +49,8 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
 		BitSet bs = bitsetMask != null ? bitsetMask : WindowsJNAAffinity.asBitSet(groupAffinityMask.getMask());
 		// find lowest index in cpuInfos with matching group ID
 		int index = 0;
-		for (index = 0; index < cpuInfos.size(); index++) {
+		int cpuInfosSize = cpuInfos.size();
+		for (index = 0; index < cpuInfosSize; index++) {
 			ICpuInfo info = cpuInfos.get(index);
 			if (info instanceof IGroupCpuInfo) {
 				IGroupCpuInfo groupInfo = (IGroupCpuInfo) info;
@@ -62,7 +63,10 @@ public abstract class LayoutEntity implements Comparable<LayoutEntity> {
 			}
 		}
 		int startIndex = index;
-		bs.stream().map(pos -> pos + startIndex).forEach(c);
+		bs.stream()
+			.map(pos -> pos + startIndex)
+			.filter( pos -> pos < cpuInfosSize)
+			.forEach(c);
 	}
 
 	@Override

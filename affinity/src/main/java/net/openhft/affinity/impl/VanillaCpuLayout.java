@@ -34,6 +34,11 @@ import static java.lang.Integer.parseInt;
  */
 public class VanillaCpuLayout implements CpuLayout {
 	public static final int MAX_CPUS_SUPPORTED = 64;
+	private static String RawData;
+
+	public static String getLastRawData() {
+		return RawData;
+	}
 
 	@NotNull
 	protected final List<ICpuInfo> cpuDetails;
@@ -156,6 +161,7 @@ public class VanillaCpuLayout implements CpuLayout {
 					parseInt(word[1]), parseInt(word[2]));
 			cpuDetails.add(details);
 		}
+		RawData = prop.toString();
 		return new VanillaCpuLayout(cpuDetails);
 	}
 
@@ -182,6 +188,7 @@ public class VanillaCpuLayout implements CpuLayout {
 
 	@NotNull
 	public static VanillaCpuLayout fromCpuInfo(InputStream is) throws IOException {
+		StringBuilder sb = new StringBuilder();
 		BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"));
 		String line;
 		List<ICpuInfo> cpuDetails = new ArrayList<>();
@@ -189,6 +196,7 @@ public class VanillaCpuLayout implements CpuLayout {
 		Map<String, Integer> threadCount = new LinkedHashMap<String, Integer>();
 
 		while ((line = br.readLine()) != null) {
+			sb.append( line).append( "\n");
 			if (line.trim().isEmpty()) {
 				String key = details.getSocketId() + "," + details.getCoreId();
 				Integer count = threadCount.get(key);
@@ -208,6 +216,7 @@ public class VanillaCpuLayout implements CpuLayout {
 			else if (words[0].equals("core id"))
 				details.setCoreId(parseInt(words[1]));
 		}
+		RawData = sb.toString();
 		return new VanillaCpuLayout(cpuDetails);
 	}
 

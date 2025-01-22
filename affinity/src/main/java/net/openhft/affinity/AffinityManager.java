@@ -352,6 +352,17 @@ public class AffinityManager {
 		return Collections.emptyList();
 	}
 
+	public void dumpRawLayout() {
+		IAffinity   iaff = Affinity.getAffinityImpl();
+		if ( ! ( iaff instanceof IDefaultLayoutAffinity)) {
+			System.err.print( "not a default layout affinity: " + iaff);
+			return;
+		}
+		IDefaultLayoutAffinity idla = (IDefaultLayoutAffinity) iaff;
+		String raw = idla.getRawData();
+		System.out.println( "raw cpu layout: " + raw);
+	}
+
 
 	public void dumpLayout() {
 		StringBuilder sb = new StringBuilder();

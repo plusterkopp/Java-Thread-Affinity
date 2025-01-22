@@ -60,6 +60,12 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
 			}
 			return DefaultLayoutAR.get();
 		}
+
+		@Override
+		public String getRawData() {
+			SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX[] lpi = getLogicalProcessorInformation();
+			return Arrays.toString( lpi);
+		}
 	};
 
 	public static final boolean LOADED;
