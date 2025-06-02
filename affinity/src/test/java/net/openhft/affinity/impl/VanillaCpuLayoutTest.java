@@ -101,19 +101,33 @@ public class VanillaCpuLayoutTest {
 		Assume.assumeTrue("not VanillaCpuLayout for " + cpuLayout, cpuLayout instanceof VanillaCpuLayout);
 		VanillaCpuLayout vanilla = (VanillaCpuLayout) cpuLayout;
 		for (Core core : vanilla.cores) {
-			BitSet coreMask = core.getBitMask();
+			BitSet coreMask = core.getBitSetMask();
 			Assume.assumeTrue("not running if no bitmask (group layout?", coreMask != null);
-			BitSet intersection = (BitSet) core.getBitMask().clone();
+			BitSet intersection = (BitSet) core.getBitSetMask().clone();
 			Socket socket = core.getSocket();
 			Assume.assumeTrue("core " + core + " must have socket", socket != null);
-			BitSet socketMask = (BitSet) socket.getBitMask().clone();
+			BitSet socketMask = (BitSet) socket.getBitSetMask().clone();
 			intersection.and(socketMask);  // expect: all bits remain set
 			// if there are bits missing, show them here
-			BitSet missing = (BitSet) core.getBitMask().clone();
+			BitSet missing = (BitSet) core.getBitSetMask().clone();
 			missing.andNot(intersection);
 			assertEquals("not wholly contained: " + coreMask + " in " + socketMask + ", missing: " + missing, intersection, coreMask);
 		}
 	}
 
+	@Test
+	public void testCPUIDs() {
+		IAffinity aff = Affinity.getAffinityImpl();
+		Assume.assumeTrue("not running for " + aff.getClass(), aff instanceof IDefaultLayoutAffinity);
+		IDefaultLayoutAffinity idl = (IDefaultLayoutAffinity) aff;
+		CpuLayout cpuLayout = idl.getDefaultLayout();
+		Assume.assumeTrue("not running if no default layout ", cpuLayout != null);
+		Assume.assumeTrue("not VanillaCpuLayout for " + cpuLayout, cpuLayout instanceof VanillaCpuLayout);
+		VanillaCpuLayout vanilla = (VanillaCpuLayout) cpuLayout;
+		for ( int i = 0;  i < vanilla.cores.size();  i++) {
+			Core core = vanilla.cores.get( i);
+			assertEquals("index mismatch at #" + i + ": coreId=" + core.getId(), i, core.getId());
+		}
+	}
 
 }

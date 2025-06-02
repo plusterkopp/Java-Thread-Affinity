@@ -39,14 +39,18 @@ public class AffinityManager {
 
 	private void countEntities() {
 		Map<String, Integer> typeToCount = new HashMap<>();
+		Map<String, Integer> typeToMax = new HashMap<>();
 		visitEntities(e -> {
 			String typeName = e.getTypeName();
-			typeToCount.compute(typeName, (name, count) -> count == null ? 1 : count + 1);
+			typeToCount.compute(typeName, (name, count) -> Integer.valueOf(count == null ? 1 : count + 1));
+			typeToMax.compute(typeName, (name, max) -> Integer.valueOf( max == null ? e.getId() : Math.max( max, e.getId())));
 		});
 		visitEntities(e -> {
 			String typeName = e.getTypeName();
 			int count = typeToCount.get(typeName);
 			e.setCountInLayout(count);
+			int max = typeToMax.get(typeName);
+			e.setMaxIdInLayout( max);
 		});
 
 	}
@@ -155,12 +159,12 @@ public class AffinityManager {
 				return true;
 			}
 			ICpuInfo current = w.getCPUInfo(cpuId);
-			BitSet desired = (BitSet) socket.getBitMask().clone();
+			BitSet desired = (BitSet) socket.getBitSetMask().clone();
 			Socket currentSocket = w.packages.stream()
 					.filter(s -> s.getId() == currentSocketId)
 					.findFirst()
 					.get();
-			BitSet ofCurrentSocket = (BitSet) currentSocket.getBitMask().clone();
+			BitSet ofCurrentSocket = (BitSet) currentSocket.getBitSetMask().clone();
 			ofCurrentSocket.and(desired);
 			System.err.print("can not bind: " + socket + ", bound to " + currentSocket + " masks intersect at " + ofCurrentSocket);
 		}
@@ -348,6 +352,17 @@ public class AffinityManager {
 		return Collections.emptyList();
 	}
 
+	public void dumpRawLayout() {
+		IAffinity   iaff = Affinity.getAffinityImpl();
+		if ( ! ( iaff instanceof IDefaultLayoutAffinity)) {
+			System.err.print( "not a default layout affinity: " + iaff);
+			return;
+		}
+		IDefaultLayoutAffinity idla = (IDefaultLayoutAffinity) iaff;
+		String raw = idla.getRawData();
+		System.out.println( "raw cpu layout: " + raw);
+	}
+
 
 	public void dumpLayout() {
 		StringBuilder sb = new StringBuilder();
@@ -378,13 +393,13 @@ public class AffinityManager {
 					return 1;
 				}
 			} else {    // should be hierarchical. Linux doesn't assign SMT bits next to each other.
-				BitSet bsA = a.getBitMask();
+				BitSet bsA = a.getBitSetMask();
 				long[] longBitsA = bsA.toLongArray();
-				BitSet bsB = b.getBitMask();
+				BitSet bsB = b.getBitSetMask();
 				long[] longBitsB = bsB.toLongArray();
 				for (int i = longBitsA.length - 1; i >= 0; i--) {
 					long maskA = longBitsA[i];
-					long maskB = longBitsB[i];
+					long maskB = longBitsB.length > i ? longBitsB[i] : 0L;
 					if (maskA != maskB) {
 						return -Long.compareUnsigned(maskA, maskB);
 					}
@@ -403,16 +418,50 @@ public class AffinityManager {
 	}
 
 	public String getLocation(LayoutEntity le) {
+		String locationInfo = le.getLocationInfo();
+		if ( locationInfo != null) {
+			return locationInfo;
+		}
+		int nCoresA[] = { 0};
+		int nL2A[] = { 0};
+		visitEntities(entity -> {
+			if ( entity instanceof  Core) {
+				nCoresA[ 0]++;
+			}
+			if ( entity instanceof Cache) {
+				Cache c = (Cache) entity;
+				if ( c.getLevel() == 2) {
+					nL2A[ 0]++;
+				}
+			}
+		});
 		List<LayoutEntity> inEntities = new ArrayList<>(10);
 		visitEntities(entity -> {
+			// exclude the entity itself and any entity that has only one instance (which then fullyContains everything else anyway and doesn't add information)
 			if (entity == le || entity.getCountInLayout() < 2) {
 				return;
+			}
+			// omit L1 caches
+			if (entity instanceof Cache) {
+				Cache cache = (Cache) entity;
+				if ( 1 == cache.getLevel()) {
+					return;
+				}
+				// skip L2 info if number of cores equals number of L2
+				if ( 2 == cache.getLevel() && nCoresA[ 0] == nL2A[ 0]) {
+					return;
+				}
 			}
 			if (entity.fullyContains(le)) {
 				inEntities.add(entity);
 			}
 		});
 		Collections.sort(inEntities, (a, b) -> {
+			ELayoutEntityType typeA = a.getEntityType();
+			ELayoutEntityType typeB = b.getEntityType();
+			if ( typeA != typeB) {
+				return typeA.compareTo( typeB);
+			}
 			GroupAffinityMask gamA = a.getGroupMask();
 			GroupAffinityMask gamB = b.getGroupMask();
 			if (gamA != null && gamB != null) {
@@ -421,24 +470,26 @@ public class AffinityManager {
 				return Long.compare(Long.bitCount(gamAMask), Long.bitCount(gamBMask));
 			}
 			// or BitSets
-			BitSet bsA = a.getBitMask();
-			BitSet bsB = b.getBitMask();
+			BitSet bsA = a.getBitSetMask();
+			BitSet bsB = b.getBitSetMask();
 			return Long.compare(bsA.cardinality(), bsB.cardinality());
 		});
 		StringBuilder sb = new StringBuilder(100);
 		sb.append(le.getTypeName())
 			.append("#")
-			.append(le.getId())
+			.append(le.paddedID())
 		;
 		inEntities.forEach(e -> {
 			sb
 				.append("/")
 				.append(e.getTypeName())
 				.append("#")
-				.append(e.getId());
+				.append( e.paddedID());
 		});
 
-		return sb.toString();
+		locationInfo = sb.toString();
+		le.setLocationInfo( locationInfo);
+		return locationInfo;
 	}
 
 }

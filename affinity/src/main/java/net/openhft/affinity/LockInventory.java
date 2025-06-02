@@ -61,6 +61,8 @@ class LockInventory {
 			return;
 		}
 		reset(cpuLayout);
+//		System.out.println( "base: " + AffinityLock.BASE_AFFINITY);
+//		System.out.println( "reserved: " + AffinityLock.RESERVED_AFFINITY);
 		for (int i = 0; i < cpuLayout.cpus(); i++) {
 			final boolean base = AffinityLock.BASE_AFFINITY.get(i);
 			final boolean reservable = AffinityLock.RESERVED_AFFINITY.get(i);

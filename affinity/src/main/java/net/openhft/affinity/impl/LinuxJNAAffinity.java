@@ -44,6 +44,11 @@ public enum LinuxJNAAffinity implements IAffinity, IDefaultLayoutAffinity {
 			}
 			return DefaultLayoutAR.get();
 		}
+
+		@Override
+		public String getRawData() {
+			return VanillaCpuLayout.getLastRawData();
+		}
 	};
 	private static final Logger LOGGER = LoggerFactory.getLogger(LinuxJNAAffinity.class);
 	public static final boolean LOADED;

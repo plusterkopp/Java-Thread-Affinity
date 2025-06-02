@@ -53,7 +53,14 @@ public enum HwLocJNAAffinity implements IAffinity, IDefaultLayoutAffinity {
 			}
 			return DefaultLayoutAR.get();
 		}
+
+		@Override
+		public String getRawData() {
+			return RawData;
+		}
 	};
+
+	private static String RawData = null;
 
 	public static HwLocCpuLayout getCpuLayout() {
 		String[] command = {"lstopo-no-graphics", "-v", "--no-io"};
@@ -67,6 +74,7 @@ public enum HwLocJNAAffinity implements IAffinity, IDefaultLayoutAffinity {
 	}
 
 	private static HwLocCpuLayout parseHwLocOutput(InputStream input) {
+		StringBuilder sb = new StringBuilder();
 		BufferedReader br = new BufferedReader(new InputStreamReader(input));
 		String line;
 		NumaNode numaNode = null;
@@ -84,6 +92,9 @@ public enum HwLocJNAAffinity implements IAffinity, IDefaultLayoutAffinity {
 		List<ICpuInfo> cpuInfos = new ArrayList<>();
 		try {
 			while ((line = br.readLine()) != null) {
+
+				sb.append( line).append( "\n"); // remember for raw data
+
 				String trimmed = line.trim();
 				if (trimmed.startsWith("Machine")) {
 					continue;
@@ -132,6 +143,7 @@ public enum HwLocJNAAffinity implements IAffinity, IDefaultLayoutAffinity {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+		RawData = sb.toString();
 		return new HwLocCpuLayout(cpuInfos, numaNodes, sockets, cores);
 	}
 

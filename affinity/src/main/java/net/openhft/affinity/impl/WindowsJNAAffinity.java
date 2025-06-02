@@ -60,6 +60,12 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
 			}
 			return DefaultLayoutAR.get();
 		}
+
+		@Override
+		public String getRawData() {
+			SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX[] lpi = getLogicalProcessorInformation();
+			return Arrays.toString( lpi);
+		}
 	};
 
 	public static final boolean LOADED;
@@ -381,7 +387,8 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
 
 		public List<Group> asGroups() {
 			List<Group> groups = new ArrayList<>();
-			for (int i = 0; i < _u.group.activeGroupCount.intValue(); i++) {
+			// dumb virtualization setting or buggy virtualization may lead to a reported activeGroupCount larger than groupInfos length
+			for (int i = 0; i < _u.group.activeGroupCount.intValue() && i < _u.group.groupInfos.length; i++) {
 				PROCESSOR_GROUP_INFO groupInfo = _u.group.groupInfos[i];
 				Group g = new Group(i, groupInfo.activeProessorMask);
 				groups.add(g);

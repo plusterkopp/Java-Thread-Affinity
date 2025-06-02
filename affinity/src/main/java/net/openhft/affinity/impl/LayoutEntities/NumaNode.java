@@ -34,4 +34,9 @@ public class NumaNode extends LayoutEntity {
 		return "N";
 	}
 
+	@Override
+	public ELayoutEntityType getEntityType() {
+		return ELayoutEntityType.NumaNode;
+	}
+
 }

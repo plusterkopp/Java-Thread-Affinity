@@ -92,7 +92,7 @@ public class HwLocCpuLayout extends VanillaCpuLayout implements NumaCpuLayout, C
 
 	public Stream<Cache> cachesIntersecting(int cpuId) {
 		return caches.stream().
-				filter(cache -> cache.getBitMask().get(cpuId));
+				filter(cache -> cache.getBitSetMask().get(cpuId));
 	}
 
 	public List<Cache> getCaches() {
@@ -104,9 +104,9 @@ public class HwLocCpuLayout extends VanillaCpuLayout implements NumaCpuLayout, C
 		List<Cache> result = new ArrayList<>();
 		int coreId = coreId(cpuId);
 		Core core = cores.get(coreId);
-		BitSet coreMask = core.getBitMask();
+		BitSet coreMask = core.getBitSetMask();
 		allCaches.forEach(cache -> {
-			BitSet cacheMask = cache.getBitMask();
+			BitSet cacheMask = cache.getBitSetMask();
 			if (cacheMask.equals(coreMask)) {
 				result.add(cache);
 			}

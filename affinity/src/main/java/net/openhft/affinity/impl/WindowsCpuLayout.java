@@ -58,7 +58,7 @@ public class WindowsCpuLayout extends ApicCpuLayout implements NumaCpuLayout, Gr
 		SortedSet<Socket> packages = new TreeSet<>();
 		SortedSet<Core> cores = new TreeSet<>();
 		SortedSet<Cache> caches = new TreeSet<>();
-		List<ICpuInfo> cpuInfos = WindowsCpuLayout.asCpuInfos(sysInfo, groups, nodes, packages, cores, caches);
+		List<ICpuInfo> cpuInfos = asCpuInfos(sysInfo, groups, nodes, packages, cores, caches);
 		WindowsCpuLayout result = new WindowsCpuLayout(cpuInfos, groups, nodes, packages, cores, caches);
 		return result;
 	}
