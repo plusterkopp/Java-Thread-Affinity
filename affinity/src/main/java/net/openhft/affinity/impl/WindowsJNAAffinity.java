@@ -259,7 +259,9 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
 			final int gc = activeGroupCount.intValue();
 			PROCESSOR_GROUP_INFO[] result = new PROCESSOR_GROUP_INFO[gc];
 			for (int i = 0; i < gc; i++) {
-				result[i] = groupInfos[i];
+				if ( i < groupInfos.length) {
+					result[i] = groupInfos[i];
+				}
 			}
 			return result;
 		}
