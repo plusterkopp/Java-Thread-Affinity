@@ -243,7 +243,8 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
 	}
 
 	public static class GROUP_RELATIONSHIP extends Structure {
-		final public PROCESSOR_GROUP_INFO[] groupInfos = new PROCESSOR_GROUP_INFO[3];
+		// not final: JNA fills structure fields reflectively, which newer JDKs refuse for final fields
+		public PROCESSOR_GROUP_INFO[] groupInfos = new PROCESSOR_GROUP_INFO[3];
 		public WinDef.WORD maximumGroupCount;
 		public WinDef.WORD activeGroupCount;
 		public byte reserved[] = new byte[20];
@@ -369,9 +370,13 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
 			switch (relationShip) {
 				case WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationProcessorCore:
 				case WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationProcessorPackage:
+				// newer Windows versions also report dies and modules, with the same structure as cores
+				case WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationProcessorDie:
+				case WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationProcessorModule:
 					_u.setType(PROCESSOR_RELATIONSHIP.class);
 					break;
 				case WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationNumaNode:
+				case WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationNumaNodeEx:
 					_u.setType(NUMA_NODE_RELATIONSHIP.class);
 					break;
 				case WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationCache:
@@ -441,7 +446,14 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
 				case WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationProcessorPackage:
 					sb.append(" PackageInfo ").append(_u.processor);
 					break;
+				case WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationProcessorDie:
+					sb.append(" DieInfo ").append(_u.processor);
+					break;
+				case WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationProcessorModule:
+					sb.append(" ModuleInfo ").append(_u.processor);
+					break;
 				case WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationNumaNode:
+				case WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationNumaNodeEx:
 					sb.append(" NodeInfo ").append(_u.numaNode);
 					break;
 				case WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationCache:
@@ -450,6 +462,8 @@ public enum WindowsJNAAffinity implements IAffinity, IGroupAffinity, IDefaultLay
 				case WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationGroup:
 					sb.append(" GroupInfo ").append(_u.group);
 					break;
+				default:
+					sb.append(" unknown relation type ").append(relationShip);
 			}
 			return sb.toString();
 		}

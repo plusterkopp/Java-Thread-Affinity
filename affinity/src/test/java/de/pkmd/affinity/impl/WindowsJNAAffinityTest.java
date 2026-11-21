@@ -86,6 +86,8 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 		testRelationType("caches", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationCache);
 		testRelationType("getNodes", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationNumaNode);
 		testRelationType("groups", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationGroup);
+		testRelationType("dies", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationProcessorDie);
+		testRelationType("modules", WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationProcessorModule);
 	}
 
 	void testRelationType(String name, int typeID) {
@@ -100,7 +102,9 @@ public class WindowsJNAAffinityTest extends AbstractAffinityImplTest {
 			System.err.flush();
 			System.out.flush();
 			for (WindowsJNAAffinity.SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX slpi : infos) {
-				assertTrue("strange relation type: " + slpi, WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationGroup >= slpi.relationShip);
+				assertTrue("strange relation type: " + slpi,
+					slpi.relationShip >= WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationProcessorCore
+						&& slpi.relationShip <= WinNT.LOGICAL_PROCESSOR_RELATIONSHIP.RelationProcessorModule);
 				assertTrue("strange size: " + slpi, slpi.size() < 500);
 			}
 		} catch (Exception e) {
