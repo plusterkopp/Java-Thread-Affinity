@@ -61,6 +61,12 @@ if (layout instanceof CacheCpuLayout) {
 - Also removed: `Affinity.setThreadId()`, the macOS, Solaris and generic POSIX implementations, and `net.openhft.ticker`.
 - The complete 3.4 line, with all classes inherited from OpenHFT, remains available as tag `v3.4.0.9` and branch `3-openhft-fork`.
 
+## License
+
+Apache License 2.0, see [LICENSE](LICENSE) and [NOTICE](NOTICE).
+The parts that come from OpenHFT were LGPL-3 in OpenHFT 3.0, which this fork started from;
+OpenHFT's copyright holders relicensed them under Apache 2.0 with version 3.1.0 (2017).
+
 ## Background
 
 This fork aims to provide support for another use case: Binding to groups of CPUs instead of single cores. This is useful for exploiting cache locality for groups of threads with similar data access patterns.
