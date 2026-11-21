@@ -53,6 +53,9 @@ if (layout instanceof CacheCpuLayout) {
   Without hwloc, the layout comes from `/proc/cpuinfo`, which only knows sockets, cores and SMT threads.
 - **Other systems:** `NullAffinity`, which neither binds nor detects a layout.
 
+On Java 24 and newer, JNA's native calls cause "restricted method" warnings; start the JVM with
+`--enable-native-access=ALL-UNNAMED` to silence them before a future Java release turns them into errors.
+
 ## Migrating from 3.4.x
 
 - Replace `net.openhft.affinity` with `de.pkmd.affinity` in imports and in logger configuration.

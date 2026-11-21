@@ -32,6 +32,25 @@ does not work with Maven 4 yet.
    gpg --keyserver keyserver.ubuntu.com --send-keys KEYID
    ```
 
+   With several secret keys in the keyring, tell the gpg plugin which one to use, in `~/.m2/settings.xml`:
+
+   ```xml
+   <profiles>
+     <profile>
+       <id>gpg</id>
+       <properties>
+         <gpg.keyname>FINGERPRINT</gpg.keyname>
+       </properties>
+     </profile>
+   </profiles>
+   <activeProfiles>
+     <activeProfile>gpg</activeProfile>
+   </activeProfiles>
+   ```
+
+   Sonatype's documentation only shows RSA keys. If the Portal rejects the signatures of an Ed25519 key,
+   nothing gets published; create an RSA key as above and deploy again.
+
 ## Release X.Y.Z
 
 ```bash
