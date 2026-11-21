@@ -17,6 +17,50 @@ and is now developed independently. Upstream and this project serve different us
 
 Releases are tagged `vX.Y.Z`. Releases before 3.5.0 used four-part version numbers (3.4.0.1 … 3.4.0.9).
 
+## Usage
+
+Everything lives in package `de.pkmd.affinity`. `AffinityManager` detects the layout once and hands out its entities
+(sockets, NUMA nodes, processor groups, caches, cores). Each entity binds the calling thread to all CPUs it contains.
+
+```java
+AffinityManager am = AffinityManager.getInstance();
+am.dumpLayout();                        // prints the detected layout
+
+// bind the current thread to the first socket
+Socket socket = am.getSocket(0);
+socket.bind();
+
+// or to the first L3 cache, if the layout knows caches
+CpuLayout layout = am.getLayout();
+if (layout instanceof CacheCpuLayout) {
+    for (Cache cache : ((CacheCpuLayout) layout).getCaches()) {
+        if (cache.getLevel() == 3) {
+            cache.bind();
+            break;
+        }
+    }
+}
+```
+
+`am.getBoundTo(thread)` tells which entities a thread is bound to, and `am.getLocation(entity)` describes where an entity sits in the layout.
+
+## Platforms
+
+- **Windows:** layout from `GetLogicalProcessorInformationEx` via JNA and the small `affinityInfo.dll` that ships inside the jar.
+  Handles processor groups, i.e. machines with more than 64 logical CPUs.
+- **Linux:** layout from hwloc (`lstopo-no-graphics`, package `hwloc`), including caches and NUMA nodes.
+  Without hwloc, the layout comes from `/proc/cpuinfo`, which only knows sockets, cores and SMT threads.
+- **Other systems:** `NullAffinity`, which neither binds nor detects a layout.
+
+## Migrating from 3.4.x
+
+- Replace `net.openhft.affinity` with `de.pkmd.affinity` in imports and in logger configuration.
+- Upstream's locking model is gone: `AffinityLock`, `LockInventory`, `AffinityStrategies`, `AffinityStrategy`, `AffinityThreadFactory`,
+  `AffinitySupport` and the `Affinity.acquireLock()`/`acquireCore()` passthroughs. Use `AffinityManager.getInstance().getLayout()`
+  instead of `AffinityLock.cpuLayout()`.
+- Also removed: `Affinity.setThreadId()`, the macOS, Solaris and generic POSIX implementations, and `net.openhft.ticker`.
+- The complete 3.4 line, with all classes inherited from OpenHFT, remains available as tag `v3.4.0.9` and branch `3-openhft-fork`.
+
 ## Background
 
 This fork aims to provide support for another use case: Binding to groups of CPUs instead of single cores. This is useful for exploiting cache locality for groups of threads with similar data access patterns.
@@ -40,9 +84,9 @@ Unfortunately, Linux currently does not provide the same one-stop introspection 
 
 Caches do not execute code, and are therefore not referenced in `CpuInfo`s. Instead, they form their own hierarchy. We can only relate `LayoutEntities` (including caches) to each other by their mask.
 
-To bind threads to `LayoutEntities`, they provide a `bind()` method to bind the current thread, keeping track of the threads that are currently bound to it. Alternatively, the `AffinityManager` provides methods to bind to each kind `LayoutEntity`, returning `true` if successful. This functionality is vaguely similar to `AffinityStrategy`, but better matched to what I wanted to do.
+To bind threads to `LayoutEntities`, they provide a `bind()` method to bind the current thread, keeping track of the threads that are currently bound to it. Alternatively, the `AffinityManager` provides methods to bind to each kind `LayoutEntity`, returning `true` if successful. This replaces upstream's `AffinityLock` and `AffinityStrategy`, which are no longer part of this library.
 
-Not contained in this package is how to bind worker threads in a pool. Since this can be done only by each thread for itself, I subclassed `Thread` as `AffitityThread`. For constructors with a `Runnable` argument, I wrap that `Runnable` into one that first binds the new `Thread`. 
+Not contained in this package is how to bind worker threads in a pool. Since this can be done only by each thread for itself, I subclassed `Thread` as `AffinityThread`. For constructors with a `Runnable` argument, I wrap that `Runnable` into one that first binds the new `Thread`. 
 
 	public AffinityThread( Runnable target, String name, LayoutEntity bindTo) {
 		super( createBindingRunnable( bindTo, target), name);
@@ -66,9 +110,6 @@ To use these threads, `ThreadPool`s need a custom `ThreadFactory` that creates `
 
 Usually, I do not unbind or rebind threads after they have been initially bound. However, this is possible and covered in unit tests.
 
-I would like to see this fork somehow remerged back into the original package if my use case becomes more relevant to the people maintaining it. If I need to add more comments to my already totally self-explanatory code to help this effort, please contact me.
-
----
-Overdue update Oct 2023
+### Linux layout via hwloc (October 2023)
 
 The `hwloc` package provides layout introspection capabilities similar to Windows. When running under Linux, we therefore call `lstopo-no-graphics -v --no-io` and parse the output. 
