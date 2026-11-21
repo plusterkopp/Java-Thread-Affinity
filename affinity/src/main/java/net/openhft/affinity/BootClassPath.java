@@ -16,43 +16,22 @@
 
 package net.openhft.affinity;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import sun.misc.URLClassPath;
-
-import java.io.File;
-import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLClassLoader;
 
+/**
+ * Checks whether a class is visible to the bootstrap class loader.
+ * Uses only public API, so it works on Java 8 as well as Java 9+ (where {@code sun.misc.URLClassPath}
+ * and the {@code sun.boot.class.path} property no longer exist).
+ */
 enum BootClassPath {
 	INSTANCE;
 
-	private final URLClassPath bootClassPath = new URLClassPath(getBootClassPathURLs(), null);
+	// a URLClassLoader without URLs and with a null parent only sees resources of the bootstrap loader
+	private final ClassLoader bootLoader = new URLClassLoader(new URL[0], null);
 
 	public final boolean has(String binaryClassName) {
 		String resourceClassName = binaryClassName.replace('.', '/').concat(".class");
-		return bootClassPath.getResource(resourceClassName, false) != null;
-	}
-
-	private URL[] getBootClassPathURLs() {
-		Logger LOGGER = LoggerFactory.getLogger(BootClassPath.class);
-		try {
-			String bootClassPath = System.getProperty("sun.boot.class.path");
-			LOGGER.trace("Boot class-path is: {}", bootClassPath);
-
-			String pathSeparator = System.getProperty("path.separator");
-			LOGGER.trace("Path separator is: '{}'", pathSeparator);
-
-			String[] pathElements = bootClassPath.split(pathSeparator);
-			URL[] pathURLs = new URL[pathElements.length];
-			for (int i = 0; i < pathElements.length; i++) {
-				pathURLs[i] = new File(pathElements[i]).toURI().toURL();
-			}
-
-			return pathURLs;
-		} catch (MalformedURLException e) {
-			LOGGER.warn("Parsing the boot class-path failed! Reason: {}", e.getMessage());
-			return new URL[0];
-		}
+		return bootLoader.getResource(resourceClassName) != null;
 	}
 }

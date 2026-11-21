@@ -61,12 +61,12 @@ public class AffinityLockTest {
 		final String actual = LockInventory.dumpLocks(locks);
 		assertEquals("0: General use CPU\n" +
 				"1: CPU not available\n" +
-				"2: Thread[logger,5,main] alive=true\n" +
-				"3: Thread[engine,5,main] alive=true\n" +
+				"2: " + locks[2].assignedThread + " alive=true\n" +
+				"3: " + locks[3].assignedThread + " alive=true\n" +
 				"4: General use CPU\n" +
 				"5: CPU not available\n" +
-				"6: Thread[main,5,main] alive=false\n" +
-				"7: Thread[tcp,5,main] alive=true\n", actual);
+				"6: " + locks[6].assignedThread + " alive=false\n" +
+				"7: " + locks[7].assignedThread + " alive=true\n", actual);
 //		System.out.println(actual);
 
 		locks[2].assignedThread.interrupt();
@@ -91,9 +91,9 @@ public class AffinityLockTest {
 
 		final String actual = LockInventory.dumpLocks(locks);
 		assertEquals("0: General use CPU\n" +
-				"1: Thread[engine,5,main] alive=true\n" +
+				"1: " + locks[1].assignedThread + " alive=true\n" +
 				"2: General use CPU\n" +
-				"3: Thread[main,5,main] alive=false\n", actual);
+				"3: " + locks[3].assignedThread + " alive=false\n", actual);
 //		System.out.println(actual);
 
 		locks[1].assignedThread.interrupt();
@@ -112,7 +112,7 @@ public class AffinityLockTest {
 
 		final String actual = LockInventory.dumpLocks(locks);
 		assertEquals("0: General use CPU\n" +
-				"1: Thread[engine,5,main] alive=true\n", actual);
+				"1: " + locks[1].assignedThread + " alive=true\n", actual);
 
 		locks[1].assignedThread.interrupt();
 //		System.out.println("Locks at dumpLocksCoreDuo exit: " + AffinityLock.dumpLocks());

@@ -95,6 +95,8 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<!-- 3.1 from the parent pom does not support <release>; needed to build with JDK 9+ -->
+				<version>3.13.0</version>
 				<configuration>
 					<compilerArgument>-Xlint:deprecation</compilerArgument>
 					<source>8</source>
@@ -216,6 +218,31 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<!-- building with JDK 9 or newer: still produce Java 8 compatible bytecode/API usage,
+			 and allow tests to use reflection on java.lang.Thread (Affinity.setThreadId) -->
+		<profile>
+			<id>jdk9plus</id>
+			<activation>
+				<jdk>[9,)</jdk>
+			</activation>
+			<properties>
+				<maven.compiler.release>8</maven.compiler.release>
+			</properties>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-surefire-plugin</artifactId>
+						<configuration>
+							<argLine>--add-opens java.base/java.lang=ALL-UNNAMED</argLine>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 
 	<!-- todo remove once next parent pom is adopted -->
 	<repositories>

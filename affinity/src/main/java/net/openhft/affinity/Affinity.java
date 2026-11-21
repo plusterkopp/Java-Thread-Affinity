@@ -189,6 +189,9 @@ public enum Affinity {
 			final Thread thread = Thread.currentThread();
 			tid.setLong(thread, threadId);
 			Affinity.LOGGER.info("Set {} to thread id {}", thread.getName(), threadId);
+		} catch (RuntimeException e) {
+			// Java 9+: InaccessibleObjectException unless java.lang is opened to us
+			throw new IllegalStateException("Cannot set Thread.tid. On Java 9+ run with --add-opens java.base/java.lang=ALL-UNNAMED", e);
 		} catch (Exception e) {
 			throw new IllegalStateException(e);
 		}
