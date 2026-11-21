@@ -25,8 +25,29 @@
     <version>3.5.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>Java Affinity Parent</name>
-    <description>Java Thread Affinity library</description>
+    <name>Java Thread Affinity (pkmd) build</name>
+    <description>Builds the affinity module; only that module is published</description>
+
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+    </properties>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <!-- mvn versions:set -DnewVersion=X.Y.Z updates this pom and affinity/pom.xml -->
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>versions-maven-plugin</artifactId>
+                    <version>2.25.2</version>
+                    <configuration>
+                        <processAllModules>true</processAllModules>
+                        <generateBackupPoms>false</generateBackupPoms>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 
     <modules>
         <module>affinity</module>

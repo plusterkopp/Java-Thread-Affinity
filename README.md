@@ -16,6 +16,7 @@ and is now developed independently. Upstream and this project serve different us
 ```
 
 Releases are tagged `vX.Y.Z`. Releases before 3.5.0 used four-part version numbers (3.4.0.1 … 3.4.0.9).
+How to publish a release: [RELEASING.md](RELEASING.md).
 
 ## Usage
 

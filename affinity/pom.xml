@@ -19,121 +19,201 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-	<parent>
-		<groupId>net.openhft</groupId>
-		<artifactId>java-parent-pom</artifactId>
-		<version>1.1.4</version>
-		<relativePath/>
-	</parent>
-
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.pkmd</groupId>
 	<artifactId>affinity</artifactId>
 	<version>3.5.0-SNAPSHOT</version>
-	<packaging>bundle</packaging>
+	<packaging>jar</packaging>
 
-	<name>Java-Thread-Affinity/affinity</name>
-	<description>Java Thread Affinity library with automatic layout detection</description>
+	<name>Java Thread Affinity (pkmd)</name>
+	<description>Binds Java threads to sockets, NUMA nodes, caches and cores, with CPU layout detection on Windows and Linux</description>
+	<url>https://github.com/plusterkopp/Java-Thread-Affinity</url>
+	<inceptionYear>2014</inceptionYear>
+
+	<licenses>
+		<license>
+			<name>Apache-2.0</name>
+			<url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+
+	<developers>
+		<developer>
+			<id>plusterkopp</id>
+			<name>Ralf Helbing</name>
+			<url>https://github.com/plusterkopp</url>
+		</developer>
+	</developers>
+
+	<scm>
+		<url>https://github.com/plusterkopp/Java-Thread-Affinity</url>
+		<connection>scm:git:https://github.com/plusterkopp/Java-Thread-Affinity.git</connection>
+		<developerConnection>scm:git:git@github.com:plusterkopp/Java-Thread-Affinity.git</developerConnection>
+		<tag>HEAD</tag>
+	</scm>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<jna.version>5.19.1</jna.version>
+		<!-- 1.7.x works with both slf4j 1.7 bindings and 2.x providers -->
+		<slf4j.version>1.7.36</slf4j.version>
 	</properties>
-
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>net.openhft</groupId>
-				<artifactId>third-party-bom</artifactId>
-				<type>pom</type>
-				<version>3.4.20</version>
-				<scope>import</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
 
 	<dependencies>
 		<dependency>
 			<groupId>net.java.dev.jna</groupId>
 			<artifactId>jna</artifactId>
-			<version>5.19.1</version>
+			<version>${jna.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>net.java.dev.jna</groupId>
 			<artifactId>jna-platform</artifactId>
-			<version>5.19.1</version>
+			<version>${jna.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
+			<version>${slf4j.version}</version>
 		</dependency>
+		<!-- @NotNull/@Nullable, only needed to compile -->
 		<dependency>
-			<groupId>org.kohsuke.jetbrains</groupId>
+			<groupId>org.jetbrains</groupId>
 			<artifactId>annotations</artifactId>
+			<version>26.1.0</version>
+			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
-			<groupId>org.easymock</groupId>
-			<artifactId>easymock</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
+			<version>4.13.2</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-simple</artifactId>
+			<version>${slf4j.version}</version>
 			<scope>test</scope>
 		</dependency>
-
 	</dependencies>
 
 	<build>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+			</resource>
+			<resource>
+				<directory>${project.basedir}/..</directory>
+				<targetPath>META-INF</targetPath>
+				<includes>
+					<include>LICENSE</include>
+					<include>NOTICE</include>
+				</includes>
+			</resource>
+		</resources>
+
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-clean-plugin</artifactId>
+					<version>3.5.0</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-resources-plugin</artifactId>
+					<version>3.5.0</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-surefire-plugin</artifactId>
+					<version>3.6.1</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-install-plugin</artifactId>
+					<version>3.2.0</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-deploy-plugin</artifactId>
+					<version>3.2.0</version>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<!-- 3.1 from the parent pom does not support <release>; needed to build with JDK 9+ -->
-				<version>3.13.0</version>
+				<version>3.16.0</version>
 				<configuration>
-					<compilerArgument>-Xlint:deprecation</compilerArgument>
+					<compilerArgs>
+						<arg>-Xlint:deprecation</arg>
+					</compilerArgs>
 					<source>8</source>
 					<target>8</target>
-					<encoding>UTF-8</encoding>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.5.1</version>
+				<configuration>
+					<archive>
+						<manifest>
+							<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+						</manifest>
+						<manifestEntries>
+							<Automatic-Module-Name>de.pkmd.affinity</Automatic-Module-Name>
+						</manifestEntries>
+					</archive>
 				</configuration>
 			</plugin>
 
+			<!-- Maven Central requires sources and javadoc jars -->
 			<plugin>
-				<groupId>org.apache.felix</groupId>
-				<artifactId>maven-bundle-plugin</artifactId>
-				<extensions>true</extensions>
-				<configuration>
-					<instructions>
-						<Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
-						<Bundle-Name>${project.groupId} :: ${project.artifactId}</Bundle-Name>
-						<Bundle-Version>${project.version}</Bundle-Version>
-						<Import-Package>
-							com.sun.jna.platform.*;resolution:=optional,
-							*
-						</Import-Package>
-						<Export-Package>
-							de.pkmd.affinity.*
-						</Export-Package>
-					</instructions>
-				</configuration>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>3.4.0</version>
 				<executions>
-					<!--
-					  This execution makes sure that the manifest is available
-					  when the tests are executed
-					-->
 					<execution>
+						<id>attach-sources</id>
 						<goals>
-							<goal>manifest</goal>
+							<goal>jar-no-fork</goal>
 						</goals>
 					</execution>
 				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>3.12.0</version>
+				<configuration>
+					<doclint>none</doclint>
+				</configuration>
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- mvn deploy uploads to the Central Portal (token in ~/.m2/settings.xml, server id "central");
+				 the deployment is published by hand at https://central.sonatype.com/publishing/deployments -->
+			<plugin>
+				<groupId>org.sonatype.central</groupId>
+				<artifactId>central-publishing-maven-plugin</artifactId>
+				<version>0.12.0</version>
+				<extensions>true</extensions>
+				<configuration>
+					<publishingServerId>central</publishingServerId>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
@@ -149,24 +229,29 @@
 				<maven.compiler.release>8</maven.compiler.release>
 			</properties>
 		</profile>
+
+		<!-- mvn -P release deploy: signs all artifacts with the default gpg key, as Maven Central requires -->
+		<profile>
+			<id>release</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<version>3.2.8</version>
+						<executions>
+							<execution>
+								<id>sign-artifacts</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>sign</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
 	</profiles>
-
-	<!-- todo remove once next parent pom is adopted -->
-	<repositories>
-		<repository>
-			<id>sonatype-nexus-staging</id>
-			<url>https://oss.sonatype.org/content/repositories/staging</url>
-			<releases>
-				<enabled>true</enabled>
-			</releases>
-		</repository>
-	</repositories>
-
-	<scm>
-		<url>https://github.com/plusterkopp/Java-Thread-Affinity</url>
-		<connection>scm:git:https://github.com/plusterkopp/Java-Thread-Affinity.git</connection>
-		<developerConnection>scm:git:git@github.com:plusterkopp/Java-Thread-Affinity.git</developerConnection>
-		<tag>HEAD</tag>
-	</scm>
 
 </project>
