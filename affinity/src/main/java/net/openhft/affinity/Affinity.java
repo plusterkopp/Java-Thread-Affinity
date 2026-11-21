@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.reflect.Field;
 import java.util.BitSet;
 
 /**
@@ -44,34 +43,15 @@ public enum Affinity {
 			LOGGER.trace("Using Windows JNA-based affinity control implementation");
 			return WindowsJNAAffinity.INSTANCE;
 		}
-		if (osName.contains("x")) {
-	        /*if (osName.startsWith("Linux") && NativeAffinity.LOADED) {
-	            LOGGER.trace("Using Linux JNI-based affinity control implementation");
-	            AFFINITY_IMPL = NativeAffinity.INSTANCE;
-	        } else*/
-			if (osName.startsWith("Linux")) {
-				if (isHwLocAffinityUsable()) {
-					LOGGER.trace("Using hwloc text-based affinity control implementation");
-					return HwLocJNAAffinity.INSTANCE;
-				}
-				if (isLinuxJNAAffinityUsable()) {
-					LOGGER.trace("Using Linux JNA-based affinity control implementation");
-					return LinuxJNAAffinity.INSTANCE;
-				}
-			} else if (isPosixJNAAffinityUsable()) {
-				LOGGER.trace("Using Posix JNA-based affinity control implementation");
-				return PosixJNAAffinity.INSTANCE;
-			} else {
-				LOGGER.info("Using dummy affinity control implementation");
-				return NullAffinity.INSTANCE;
+		if (osName.startsWith("Linux")) {
+			if (isHwLocAffinityUsable()) {
+				LOGGER.trace("Using hwloc text-based affinity control implementation");
+				return HwLocJNAAffinity.INSTANCE;
 			}
-		} else if (osName.contains("Mac") && isMacJNAAffinityUsable()) {
-			LOGGER.trace("Using MAC OSX JNA-based thread id implementation");
-			return OSXJNAAffinity.INSTANCE;
-
-		} else if (osName.contains("SunOS") && isSolarisJNAAffinityUsable()) {
-			LOGGER.trace("Using Solaris JNA-based thread id implementation");
-			return SolarisJNAAffinity.INSTANCE;
+			if (isLinuxJNAAffinityUsable()) {
+				LOGGER.trace("Using Linux JNA-based affinity control implementation");
+				return LinuxJNAAffinity.INSTANCE;
+			}
 		}
 		LOGGER.info("Using dummy affinity control implementation");
 		return NullAffinity.INSTANCE;
@@ -91,19 +71,6 @@ public enum Affinity {
 			}
 		}
 		LOGGER.warn("Windows JNA-based affinity not usable due to JNA not being available!");
-		return false;
-	}
-
-	private static boolean isPosixJNAAffinityUsable() {
-		if (isJNAAvailable()) {
-			try {
-				return PosixJNAAffinity.LOADED;
-			} catch (Throwable t) {
-				logThrowable(t, "Posix JNA-based affinity not usable because it failed to load!");
-				return false;
-			}
-		}
-		LOGGER.warn("Posix JNA-based affinity not usable due to JNA not being available!");
 		return false;
 	}
 
@@ -130,24 +97,6 @@ public enum Affinity {
 			}
 		}
 		LOGGER.warn("Linux JNA-based affinity not usable due to JNA not being available!");
-		return false;
-	}
-
-	private static boolean isMacJNAAffinityUsable() {
-		if (isJNAAvailable()) {
-			return true;
-
-		}
-		LOGGER.warn("MAX OSX JNA-based affinity not usable due to JNA not being available!");
-		return false;
-	}
-
-	private static boolean isSolarisJNAAffinityUsable() {
-		if (isJNAAvailable()) {
-			return true;
-
-		}
-		LOGGER.warn("Solaris JNA-based affinity not usable due to JNA not being available!");
 		return false;
 	}
 
@@ -181,22 +130,6 @@ public enum Affinity {
 		return AFFINITY_IMPL.getThreadId();
 	}
 
-	public static void setThreadId() {
-		try {
-			int threadId = Affinity.getThreadId();
-			final Field tid = Thread.class.getDeclaredField("tid");
-			tid.setAccessible(true);
-			final Thread thread = Thread.currentThread();
-			tid.setLong(thread, threadId);
-			Affinity.LOGGER.info("Set {} to thread id {}", thread.getName(), threadId);
-		} catch (RuntimeException e) {
-			// Java 9+: InaccessibleObjectException unless java.lang is opened to us
-			throw new IllegalStateException("Cannot set Thread.tid. On Java 9+ run with --add-opens java.base/java.lang=ALL-UNNAMED", e);
-		} catch (Exception e) {
-			throw new IllegalStateException(e);
-		}
-	}
-
 	public static boolean isJNAAvailable() {
 		if (JNAAvailable == null)
 			try {
@@ -206,22 +139,6 @@ public enum Affinity {
 				JNAAvailable = false;
 			}
 		return JNAAvailable;
-	}
-
-	public static AffinityLock acquireLock() {
-		return AffinityLock.acquireLock();
-	}
-
-	public static AffinityLock acquireCore() {
-		return AffinityLock.acquireCore();
-	}
-
-	public static AffinityLock acquireLock(boolean bind) {
-		return AffinityLock.acquireLock(bind);
-	}
-
-	public static AffinityLock acquireCore(boolean bind) {
-		return AffinityLock.acquireCore(bind);
 	}
 
 }

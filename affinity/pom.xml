@@ -35,7 +35,6 @@
 	<description>Java Thread Affinity library with automatic layout detection</description>
 
 	<properties>
-		<native.source.dir>src/main/c</native.source.dir>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 	</properties>
@@ -105,87 +104,6 @@
 				</configuration>
 			</plugin>
 
-			<!-- TODO make git remember that the file should be executable -->
-			<!-- skip make for now
-			<plugin>
-				<artifactId>maven-antrun-plugin</artifactId>
-				<version>1.7</version>
-				<executions>
-					<execution>
-						<id>build-native</id>
-						<phase>process-classes</phase>
-						<goals>
-							<goal>run</goal>
-						</goals>
-						<configuration>
-							<target>
-								<property name="makefile" value="${project.basedir}/${native.source.dir}/Makefile" />
-								-->
-			<!-- make it executable -->
-			<!-- skip make for now
-								<chmod file="${makefile}" perm="u+x" />
-							</target>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-			-->
-
-			<!-- skip make for now
-		   <plugin>
-			   <groupId>org.codehaus.mojo</groupId>
-			   <artifactId>exec-maven-plugin</artifactId>
-			   <version>1.2.1</version>
-			   <executions>
-				   <execution>
-					   --><!-- this execution happens just after compiling the java classes, and builds the native code. -->
-			<!-- skip make for now
-					   <id>build-native</id>
-					   <phase>process-classes</phase>
-					   <goals>
-						   <goal>exec</goal>
-					   </goals>
-					   <configuration>
-						   <executable>${project.basedir}/${native.source.dir}/Makefile</executable>
-						   <workingDirectory>${project.basedir}/${native.source.dir}</workingDirectory>
-					   </configuration>
-				   </execution>
-			   </executions>
-		   </plugin> -->
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-scm-publish-plugin</artifactId>
-				<configuration>
-					<checkoutDirectory>${project.build.directory}/scmpublish/javadoc</checkoutDirectory>
-					<checkinComment>Publishing javadoc for ${project.artifactId}:${project.version}
-					</checkinComment>
-					<content>${project.reporting.outputDirectory}</content>
-					<skipDeletedFiles>true</skipDeletedFiles>
-					<pubScmUrl>scm:git:git@github.com:OpenHFT/Java-Thread-Affinity</pubScmUrl>
-					<scmBranch>gh-pages</scmBranch>
-				</configuration>
-			</plugin>
-			<!--
-				generate maven dependencies versions file that can be used later
-				to install the right bundle in test phase.
-
-				The file is:
-
-					target/classes/META-INF/maven/dependencies.properties
-			-->
-			<plugin>
-				<groupId>org.apache.servicemix.tooling</groupId>
-				<artifactId>depends-maven-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>generate-depends-file</id>
-						<goals>
-							<goal>generate-depends-file</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
 			<plugin>
 				<groupId>org.apache.felix</groupId>
 				<artifactId>maven-bundle-plugin</artifactId>
@@ -193,7 +111,7 @@
 				<configuration>
 					<instructions>
 						<Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
-						<Bundle-Name>OpenHFT :: ${project.artifactId}</Bundle-Name>
+						<Bundle-Name>${project.groupId} :: ${project.artifactId}</Bundle-Name>
 						<Bundle-Version>${project.version}</Bundle-Version>
 						<Import-Package>
 							com.sun.jna.platform.*;resolution:=optional,
@@ -220,8 +138,7 @@
 	</build>
 
 	<profiles>
-		<!-- building with JDK 9 or newer: still produce Java 8 compatible bytecode/API usage,
-			 and allow tests to use reflection on java.lang.Thread (Affinity.setThreadId) -->
+		<!-- building with JDK 9 or newer: still produce Java 8 compatible bytecode/API usage -->
 		<profile>
 			<id>jdk9plus</id>
 			<activation>
@@ -230,17 +147,6 @@
 			<properties>
 				<maven.compiler.release>8</maven.compiler.release>
 			</properties>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-surefire-plugin</artifactId>
-						<configuration>
-							<argLine>--add-opens java.base/java.lang=ALL-UNNAMED</argLine>
-						</configuration>
-					</plugin>
-				</plugins>
-			</build>
 		</profile>
 	</profiles>
 
