@@ -1,0 +1,42 @@
+package de.pkmd.affinity.impl.LayoutEntities;
+
+import de.pkmd.affinity.impl.GroupAffinityMask;
+
+/**
+ * Created by rhelbing on 31.03.17.
+ */
+public class NumaNode extends LayoutEntity {
+
+	protected NumaNode(GroupAffinityMask m) {
+		super(m);
+	}
+
+	public NumaNode(int index, long mask) {
+		super(index, mask);
+	}
+
+	public NumaNode(int id) {
+		super(id);
+	}
+
+	public String toString() {
+		return "N " + super.toString();
+	}
+
+	public String getLocation() {
+		if (groupAffinityMask != null) {
+			return groupAffinityMask.getGroupId() + "/" + getId();
+		}
+		return String.valueOf(getId());
+	}
+
+	public String getTypeName() {
+		return "N";
+	}
+
+	@Override
+	public ELayoutEntityType getEntityType() {
+		return ELayoutEntityType.NumaNode;
+	}
+
+}

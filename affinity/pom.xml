@@ -118,7 +118,7 @@
 							*
 						</Import-Package>
 						<Export-Package>
-							net.openhft.affinity.*
+							de.pkmd.affinity.*
 						</Export-Package>
 					</instructions>
 				</configuration>
