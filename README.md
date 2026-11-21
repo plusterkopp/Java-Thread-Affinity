@@ -1,3 +1,24 @@
+# Java Thread Affinity (pkmd)
+
+Binds Java threads to groups of CPUs (sockets, NUMA nodes, L3/L2 caches, cores) rather than to single CPUs.
+It detects the CPU layout on Windows (`GetLogicalProcessorInformationEx`, with processor groups for more than 64 logical CPUs)
+and on Linux (via hwloc's `lstopo-no-graphics`).
+
+This started in 2013 as a fork of [OpenHFT/Java-Thread-Affinity](https://github.com/OpenHFT/Java-Thread-Affinity)
+and is now developed independently. Upstream and this project serve different use cases, and the code has diverged too far to merge.
+
+```xml
+<dependency>
+    <groupId>de.pkmd</groupId>
+    <artifactId>affinity</artifactId>
+    <version>3.5.0-SNAPSHOT</version>
+</dependency>
+```
+
+Releases are tagged `vX.Y.Z`. Releases before 3.5.0 used four-part version numbers (3.4.0.1 … 3.4.0.9).
+
+## Background
+
 This fork aims to provide support for another use case: Binding to groups of CPUs instead of single cores. This is useful for exploiting cache locality for groups of threads with similar data access patterns.
 
 Another feature that was missing in 2013 when I started working in this fork was layout introspection for the Windows platform.

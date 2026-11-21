@@ -28,7 +28,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.pkmd</groupId>
 	<artifactId>affinity</artifactId>
-	<version>3.4.0.9</version>
+	<version>3.5.0-SNAPSHOT</version>
 	<packaging>bundle</packaging>
 
 	<name>Java-Thread-Affinity/affinity</name>
@@ -256,11 +256,10 @@
 	</repositories>
 
 	<scm>
-		<url>scm:git:git@github.com/plusterkopp/Java-Thread-Affinity.git</url>
-		<connection>scm:git:git@github.com/plusterkopp/Java-Thread-Affinity.git</connection>
-		<developerConnection>scm:git:git@github.com/plusterkopp/Java-Thread-Affinity.git
-		</developerConnection>
-		<tag>master</tag>
+		<url>https://github.com/plusterkopp/Java-Thread-Affinity</url>
+		<connection>scm:git:https://github.com/plusterkopp/Java-Thread-Affinity.git</connection>
+		<developerConnection>scm:git:git@github.com:plusterkopp/Java-Thread-Affinity.git</developerConnection>
+		<tag>HEAD</tag>
 	</scm>
 
 </project>
