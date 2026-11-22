@@ -230,7 +230,8 @@
 			</properties>
 		</profile>
 
-		<!-- mvn -P release deploy: signs all artifacts with the default gpg key, as Maven Central requires -->
+		<!-- mvn -P release deploy: signs all artifacts with the gpg key named by gpg.keyname (default: first usable key),
+			 as Maven Central requires -->
 		<profile>
 			<id>release</id>
 			<build>
@@ -245,6 +246,42 @@
 								<phase>verify</phase>
 								<goals>
 									<goal>sign</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<!-- mvn -P check package: target/affinity-<version>-check.jar with the tests and all dependencies.
+			 Runs the unit tests on machines without Maven: java -jar affinity-<version>-check.jar -->
+		<profile>
+			<id>check</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-assembly-plugin</artifactId>
+						<version>3.8.0</version>
+						<configuration>
+							<descriptors>
+								<descriptor>src/assembly/check.xml</descriptor>
+							</descriptors>
+							<archive>
+								<manifest>
+									<mainClass>de.pkmd.affinity.LayoutCheck</mainClass>
+								</manifest>
+							</archive>
+							<!-- never deployed -->
+							<attach>false</attach>
+						</configuration>
+						<executions>
+							<execution>
+								<id>check-jar</id>
+								<phase>package</phase>
+								<goals>
+									<goal>single</goal>
 								</goals>
 							</execution>
 						</executions>

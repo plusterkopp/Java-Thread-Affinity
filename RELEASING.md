@@ -51,6 +51,21 @@ does not work with Maven 4 yet.
    Sonatype's documentation only shows RSA keys. If the Portal rejects the signatures of an Ed25519 key,
    nothing gets published; create an RSA key as above and deploy again.
 
+## Checking other machines
+
+To run the unit tests on a machine that has Java but no Maven, build a self-contained jar and copy it there:
+
+```bash
+mvn -P check package -DskipTests
+```
+
+```bash
+java -jar affinity-X.Y.Z-check.jar > layout-check.txt 2>&1
+```
+
+It prints the Java version, the detected layout and the raw layout data, then the result of every test class.
+On Java 24+, add `--enable-native-access=ALL-UNNAMED` to silence JNA's warnings.
+
 ## Release X.Y.Z
 
 ```bash
