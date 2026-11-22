@@ -56,7 +56,8 @@ public class GroupAffinityMask implements Comparable<GroupAffinityMask> {
 		if (res != 0) {
 			return res;
 		}
-		return Long.compare(mask, o.mask);
+		// unsigned: in a group with 64 logical CPUs, the mask with bit 63 is negative as a signed long
+		return Long.compareUnsigned(mask, o.mask);
 	}
 
 	public long getMask() {
