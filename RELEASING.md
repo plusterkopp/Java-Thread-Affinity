@@ -80,8 +80,10 @@ git tag -a vX.Y.Z -m "Release X.Y.Z"
 mvn -P release clean deploy
 ```
 
-`deploy` builds, signs (gpg asks for the passphrase) and uploads. Then publish the deployment at
-https://central.sonatype.com/publishing/deployments; it shows up on Maven Central some minutes later.
+`deploy` builds, signs (gpg asks for the passphrase) and uploads. Don't add `-B`: in batch mode the gpg plugin
+forbids passphrase prompts, and signing fails with "No pinentry". Then publish the deployment at
+https://central.sonatype.com/publishing/deployments. Publishing cannot be cancelled once started; the Portal shows
+"Publishing" until the release has reached Maven Central, which can take from minutes to hours.
 Published releases cannot be changed or deleted, so a broken release needs a new version.
 If the upload fails validation, fix the problem, move the tag (`git tag -f -a vX.Y.Z ...`) and deploy again.
 
