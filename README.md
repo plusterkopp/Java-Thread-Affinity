@@ -11,7 +11,7 @@ and is now developed independently. Upstream and this project serve different us
 <dependency>
     <groupId>de.pkmd</groupId>
     <artifactId>affinity</artifactId>
-    <version>3.5.0-SNAPSHOT</version>
+    <version>3.5.0</version>
 </dependency>
 ```
 

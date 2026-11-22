@@ -22,7 +22,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.pkmd</groupId>
 	<artifactId>affinity</artifactId>
-	<version>3.5.0-SNAPSHOT</version>
+	<version>3.5.0</version>
 	<packaging>jar</packaging>
 
 	<name>Java Thread Affinity (pkmd)</name>

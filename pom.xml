@@ -22,7 +22,7 @@
 
     <groupId>de.pkmd</groupId>
     <artifactId>affinity-parent</artifactId>
-    <version>3.5.0-SNAPSHOT</version>
+    <version>3.5.0</version>
     <packaging>pom</packaging>
 
     <name>Java Thread Affinity (pkmd) build</name>
